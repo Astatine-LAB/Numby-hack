@@ -6,10 +6,10 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.CloseHandledScreenC2SPacket;
+import net.minecraft.network.protocol.game.ServerboundContainerClosePacket;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 /**
  * made by cqb13
@@ -53,13 +53,13 @@ public class ShieldSwap extends Module {
     }
 
     private void equipShield() {
-        ItemStack currentItem = mc.player.getOffHandStack();
+        ItemStack currentItem = mc.player.getOffhandItem();
 
         if (currentItem.getItem() == Items.SHIELD) {
             return;
         }
 
-        var inventory = mc.player.getInventory().getMainStacks();
+        var inventory = mc.player.getInventory().getNonEquipmentItems();
 
         for (int i = 0; i < inventory.size(); i++) {
             Item item = inventory.get(i).getItem();
@@ -73,7 +73,7 @@ public class ShieldSwap extends Module {
         InvUtils.move().from(originalSlot).toOffhand();
 
         if (closeInventory.get()) {
-            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(0));
+            mc.getConnection().send(new ServerboundContainerClosePacket(0));
         }
     }
 
@@ -81,7 +81,7 @@ public class ShieldSwap extends Module {
         InvUtils.move().fromOffhand().to(originalSlot);
 
         if (closeInventory.get()) {
-            mc.getNetworkHandler().sendPacket(new CloseHandledScreenC2SPacket(0));
+            mc.getConnection().send(new ServerboundContainerClosePacket(0));
         }
     }
 }

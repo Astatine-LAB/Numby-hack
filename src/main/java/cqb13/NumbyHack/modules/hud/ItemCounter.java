@@ -19,12 +19,12 @@ import meteordevelopment.meteorclient.systems.hud.elements.TextHud;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.misc.Names;
 import meteordevelopment.meteorclient.utils.player.InvUtils;
-import net.minecraft.item.BedItem;
-import net.minecraft.item.EndCrystalItem;
-import net.minecraft.item.EnderPearlItem;
-import net.minecraft.item.ExperienceBottleItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.Items;
+import net.minecraft.world.item.BedItem;
+import net.minecraft.world.item.EndCrystalItem;
+import net.minecraft.world.item.EnderpearlItem;
+import net.minecraft.world.item.ExperienceBottleItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 
 public class ItemCounter extends HudElement {
     public static final HudElementInfo<ItemCounter> INFO = new HudElementInfo<>(NumbyHack.HUD_GROUP, "item-counter",
@@ -167,7 +167,7 @@ public class ItemCounter extends HudElement {
             return "XP Bottles";
         if (item instanceof EndCrystalItem)
             return "Crystals";
-        if (item instanceof EnderPearlItem)
+        if (item instanceof EnderpearlItem)
             return "Pearls";
         if (item == Items.ENCHANTED_GOLDEN_APPLE)
             return "Gapples";

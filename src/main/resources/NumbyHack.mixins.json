@@ -1,7 +1,7 @@
 {
   "required": true,
   "package": "cqb13.NumbyHack.mixins",
-  "compatibilityLevel": "JAVA_16",
+  "compatibilityLevel": "JAVA_21",
   "client": [
     "BlockPlacementMixin",
     "TntEntityRendererMixin",

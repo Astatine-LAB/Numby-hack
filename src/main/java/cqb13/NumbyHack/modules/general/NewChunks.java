@@ -22,16 +22,16 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.fluid.FluidState;
-import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.ChunkDataS2CPacket;
-import net.minecraft.network.packet.s2c.play.ChunkDeltaUpdateS2CPacket;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.Heightmap;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ClientboundBlockUpdatePacket;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.network.protocol.game.ClientboundSectionBlocksUpdatePacket;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.level.material.FluidState;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * modified by cqb13
@@ -126,12 +126,12 @@ public class NewChunks extends Module {
         if (newChunksLineColor.get().a > 5 || newChunksSideColor.get().a > 5) {
             synchronized (newChunks) {
                 for (ChunkPos c : newChunks) {
-                    if (mc.getCameraEntity().getBlockPos().isWithinDistance(c.getStartPos(), 1024)) {
-                        render(new Box(
-                                new Vec3d(c.getStartPos().getX(), c.getStartPos().getY() + yOffset.get(),
-                                        c.getStartPos().getZ()),
-                                new Vec3d(c.getStartPos().getX() + 16, c.getStartPos().getY() + yOffset.get(),
-                                        c.getStartPos().getZ() + 16)),
+                    if (mc.getCameraEntity().blockPosition().closerThan(c.getWorldPosition(), 1024)) {
+                        render(new AABB(
+                                new Vec3(c.getWorldPosition().getX(), c.getWorldPosition().getY() + yOffset.get(),
+                                        c.getWorldPosition().getZ()),
+                                new Vec3(c.getWorldPosition().getX() + 16, c.getWorldPosition().getY() + yOffset.get(),
+                                        c.getWorldPosition().getZ() + 16)),
                                 newChunksSideColor.get(), newChunksLineColor.get(), shapeMode.get(), event);
                     }
                 }
@@ -141,12 +141,12 @@ public class NewChunks extends Module {
         if (oldChunksLineColor.get().a > 5 || oldChunksSideColor.get().a > 5) {
             synchronized (oldChunks) {
                 for (ChunkPos c : oldChunks) {
-                    if (mc.getCameraEntity().getBlockPos().isWithinDistance(c.getStartPos(), 1024)) {
-                        render(new Box(
-                                new Vec3d(c.getStartPos().getX(), c.getStartPos().getY() + yOffset.get(),
-                                        c.getStartPos().getZ()),
-                                new Vec3d(c.getStartPos().getX() + 16, c.getStartPos().getY() + yOffset.get(),
-                                        c.getStartPos().getZ() + 16)),
+                    if (mc.getCameraEntity().blockPosition().closerThan(c.getWorldPosition(), 1024)) {
+                        render(new AABB(
+                                new Vec3(c.getWorldPosition().getX(), c.getWorldPosition().getY() + yOffset.get(),
+                                        c.getWorldPosition().getZ()),
+                                new Vec3(c.getWorldPosition().getX() + 16, c.getWorldPosition().getY() + yOffset.get(),
+                                        c.getWorldPosition().getZ() + 16)),
                                 oldChunksSideColor.get(), oldChunksLineColor.get(), shapeMode.get(), event);
                     }
                 }
@@ -154,7 +154,7 @@ public class NewChunks extends Module {
         }
     }
 
-    private void render(Box box, Color sides, Color lines, ShapeMode shapeMode, Render3DEvent event) {
+    private void render(AABB box, Color sides, Color lines, ShapeMode shapeMode, Render3DEvent event) {
         event.renderer.box(
                 box.minX, box.minY, box.minZ, box.maxX, box.maxY + boxHeight.get(), box.maxZ, sides, lines, shapeMode,
                 0);
@@ -162,15 +162,15 @@ public class NewChunks extends Module {
 
     @EventHandler
     private void onReadPacket(PacketEvent.Receive event) {
-        if (event.packet instanceof ChunkDeltaUpdateS2CPacket) {
-            ChunkDeltaUpdateS2CPacket packet = (ChunkDeltaUpdateS2CPacket) event.packet;
+        if (event.packet instanceof ClientboundSectionBlocksUpdatePacket) {
+            ClientboundSectionBlocksUpdatePacket packet = (ClientboundSectionBlocksUpdatePacket) event.packet;
 
-            packet.visitUpdates((pos, state) -> {
-                if (!state.getFluidState().isEmpty() && !state.getFluidState().isStill()) {
+            packet.runUpdates((pos, state) -> {
+                if (!state.getFluidState().isEmpty() && !state.getFluidState().isSource()) {
                     ChunkPos chunkPos = new ChunkPos(pos);
 
                     for (Direction dir : searchDirs) {
-                        if (mc.world.getBlockState(pos.offset(dir)).getFluidState().isStill()
+                        if (mc.level.getBlockState(pos.relative(dir)).getFluidState().isSource()
                                 && !oldChunks.contains(chunkPos)) {
                             newChunks.add(chunkPos);
                             return;
@@ -180,14 +180,14 @@ public class NewChunks extends Module {
             });
         }
 
-        else if (event.packet instanceof BlockUpdateS2CPacket) {
-            BlockUpdateS2CPacket packet = (BlockUpdateS2CPacket) event.packet;
+        else if (event.packet instanceof ClientboundBlockUpdatePacket) {
+            ClientboundBlockUpdatePacket packet = (ClientboundBlockUpdatePacket) event.packet;
 
-            if (!packet.getState().getFluidState().isEmpty() && !packet.getState().getFluidState().isStill()) {
+            if (!packet.getBlockState().getFluidState().isEmpty() && !packet.getBlockState().getFluidState().isSource()) {
                 ChunkPos chunkPos = new ChunkPos(packet.getPos());
 
                 for (Direction dir : searchDirs) {
-                    if (mc.world.getBlockState(packet.getPos().offset(dir)).getFluidState().isStill()
+                    if (mc.level.getBlockState(packet.getPos().relative(dir)).getFluidState().isSource()
                             && !oldChunks.contains(chunkPos)) {
                         newChunks.add(chunkPos);
                         return;
@@ -196,34 +196,34 @@ public class NewChunks extends Module {
             }
         }
 
-        else if (event.packet instanceof ChunkDataS2CPacket && mc.world != null) {
-            ChunkDataS2CPacket packet = (ChunkDataS2CPacket) event.packet;
+        else if (event.packet instanceof ClientboundLevelChunkWithLightPacket && mc.level != null) {
+            ClientboundLevelChunkWithLightPacket packet = (ClientboundLevelChunkWithLightPacket) event.packet;
 
-            ChunkPos pos = new ChunkPos(packet.getChunkX(), packet.getChunkZ());
+            ChunkPos pos = new ChunkPos(packet.getX(), packet.getZ());
 
             if (!newChunks.contains(pos)
-                    && mc.world.getChunkManager().getChunk(packet.getChunkX(), packet.getChunkZ()) == null) {
-                WorldChunk chunk = new WorldChunk(mc.world, pos);
+                    && mc.level.getChunkSource().getChunkForLighting(packet.getX(), packet.getZ()) == null) {
+                LevelChunk chunk = new LevelChunk(mc.level, pos);
                 try {
                     // Thanks to Trouser-Streak
-                    Map<Heightmap.Type, long[]> heightmaps = new EnumMap<>(Heightmap.Type.class);
+                    Map<Heightmap.Types, long[]> heightmaps = new EnumMap<>(Heightmap.Types.class);
 
-                    Heightmap.Type type = Heightmap.Type.MOTION_BLOCKING;
+                    Heightmap.Types type = Heightmap.Types.MOTION_BLOCKING;
                     long[] emptyHeightmapData = new long[37];
                     heightmaps.put(type, emptyHeightmapData);
                     taskExecutor
-                            .execute(() -> chunk.loadFromPacket(packet.getChunkData().getSectionsDataBuf(), heightmaps,
-                                    packet.getChunkData().getBlockEntities(packet.getChunkX(), packet.getChunkZ())));
+                            .execute(() -> chunk.replaceWithPacketData(packet.getChunkData().getReadBuffer(), heightmaps,
+                                    packet.getChunkData().getBlockEntitiesTagsConsumer(packet.getX(), packet.getZ())));
                 } catch (ArrayIndexOutOfBoundsException e) {
                     return;
                 }
 
                 for (int x = 0; x < 16; x++) {
-                    for (int y = mc.world.getBottomY(); y < mc.world.getTopYInclusive(); y++) {
+                    for (int y = mc.level.getMinY(); y < mc.level.getMaxY(); y++) {
                         for (int z = 0; z < 16; z++) {
                             FluidState fluid = chunk.getFluidState(x, y, z);
 
-                            if (!fluid.isEmpty() && !fluid.isStill()) {
+                            if (!fluid.isEmpty() && !fluid.isSource()) {
                                 oldChunks.add(pos);
                                 return;
                             }

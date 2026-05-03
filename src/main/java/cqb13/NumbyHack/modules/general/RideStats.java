@@ -18,12 +18,12 @@ import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.passive.AbstractHorseEntity;
-import net.minecraft.entity.passive.LlamaEntity;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.Mth;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.animal.equine.AbstractHorse;
+import net.minecraft.world.entity.animal.equine.Llama;
 
 /**
  * Ported from:
@@ -120,26 +120,26 @@ public class RideStats extends Module {
 
     @EventHandler
     private void onRender2D(Render2DEvent event) {
-        for (Entity entity : Objects.requireNonNull(mc.world).getEntities()) {
+        for (Entity entity : Objects.requireNonNull(mc.level).entitiesForRendering()) {
             boolean horse = entity.getType() == EntityType.HORSE && this.horse.get();
             boolean mule = entity.getType() == EntityType.MULE && this.mule.get();
             boolean donkey = entity.getType() == EntityType.DONKEY && this.donkey.get();
             boolean llama = entity.getType() == EntityType.LLAMA && this.llama.get();
             if (horse || mule || donkey || llama) {
                 pos.set(new double[] {
-                        MathHelper.lerp(event.tickDelta, entity.lastRenderX, entity.getX()),
-                        MathHelper.lerp(event.tickDelta, entity.lastRenderY, entity.getY()),
-                        MathHelper.lerp(event.tickDelta, entity.lastRenderZ, entity.getZ())
+                        Mth.lerp(event.tickDelta, entity.xOld, entity.getX()),
+                        Mth.lerp(event.tickDelta, entity.yOld, entity.getY()),
+                        Mth.lerp(event.tickDelta, entity.zOld, entity.getZ())
                 });
                 pos.add(0, entity.getEyeHeight(entity.getPose()) + 0.75, 0);
                 pos.add(0, -1 + height.get(), 0);
                 if (NametagUtils.to2D(pos, scale.get()))
-                    renderHorseNametag((AbstractHorseEntity) entity, entity);
+                    renderHorseNametag((AbstractHorse) entity, entity);
             }
         }
     }
 
-    private void renderHorseNametag(AbstractHorseEntity horseEntity, Entity entity) {
+    private void renderHorseNametag(AbstractHorse horseEntity, Entity entity) {
         boolean llama = entity.getType() == EntityType.LLAMA;
         TextRenderer text = TextRenderer.get();
         NametagUtils.begin(pos);
@@ -147,7 +147,7 @@ public class RideStats extends Module {
 
         // Name
         String name;
-        name = horseEntity.getType().getName().getString();
+        name = horseEntity.getType().getDescription().getString();
 
         // Health
         double health = horseEntity.getMaxHealth();
@@ -155,18 +155,18 @@ public class RideStats extends Module {
 
         // Speed
         double speed = genericSpeedToBlockPerSecond(
-                horseEntity.getAttributes().getBaseValue(EntityAttributes.MOVEMENT_SPEED));
+                horseEntity.getAttributes().getBaseValue(Attributes.MOVEMENT_SPEED));
         String speedText = " " + String.format("%.1f", speed).replace(".", ",") + " bps";
 
         // Jump
         double maxJump = jumpStrengthToJumpHeight(
-                horseEntity.getAttributes().getBaseValue(EntityAttributes.JUMP_STRENGTH));
+                horseEntity.getAttributes().getBaseValue(Attributes.JUMP_STRENGTH));
         String maxJumpText = " " + String.format("%.1f", maxJump).replace(".", ",") + "m";
 
         // Inv Slots
         int invSlots = 0;
         if (llama)
-            invSlots = ((LlamaEntity) entity).getInventoryColumns() * 3;
+            invSlots = ((Llama) entity).getInventoryColumns() * 3;
         String invSlotsText = " " + invSlots + " slots";
 
         // Widths

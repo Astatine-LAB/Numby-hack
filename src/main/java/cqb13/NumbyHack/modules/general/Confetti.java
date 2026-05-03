@@ -6,7 +6,7 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * from Tanuki
@@ -30,16 +30,16 @@ public class Confetti extends Module {
         super(NumbyHack.CATEGORY, "confetti", "Changes the color of the totem pop particles.");
     }
 
-    public Vec3d getColorOne() {
+    public Vec3 getColorOne() {
         return getDoubleVectorColor(colorOne);
     }
 
-    public Vec3d getColorTwo() {
+    public Vec3 getColorTwo() {
         return getDoubleVectorColor(colorTwo);
     }
 
-    public Vec3d getDoubleVectorColor(Setting<SettingColor> colorSetting) {
-        return new Vec3d((double) colorSetting.get().r / 255, (double) colorSetting.get().g / 255,
+    public Vec3 getDoubleVectorColor(Setting<SettingColor> colorSetting) {
+        return new Vec3((double) colorSetting.get().r / 255, (double) colorSetting.get().g / 255,
                 (double) colorSetting.get().b / 255);
     }
 }

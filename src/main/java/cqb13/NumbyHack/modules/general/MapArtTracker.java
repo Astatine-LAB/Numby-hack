@@ -41,16 +41,16 @@ import meteordevelopment.meteorclient.utils.render.RenderUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.component.type.MapIdComponent;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.util.WorldSavePath;
-import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.Box;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.decoration.ItemFrame;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.saveddata.maps.MapId;
+import net.minecraft.world.level.storage.LevelResource;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * made by cqb13
@@ -137,7 +137,7 @@ public class MapArtTracker extends Module {
 
         WButton clearMapCacheBtn = l1.add(theme.button("Clear Map Cache")).expandX().widget();
         clearMapCacheBtn.action = () -> {
-            if (!this.isActive() || mc.world == null)
+            if (!this.isActive() || mc.level == null)
                 return;
 
             maps.clear();
@@ -158,7 +158,7 @@ public class MapArtTracker extends Module {
 
     @Override
     public void onActivate() {
-        if (mc.world == null)
+        if (mc.level == null)
             return;
 
         maps.clear();
@@ -178,16 +178,16 @@ public class MapArtTracker extends Module {
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
-        for (Entity entity : mc.world.getEntities()) {
-            if (!(entity instanceof ItemFrameEntity frame)) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof ItemFrame frame)) {
                 continue;
             }
 
-            ItemStack stack = frame.getHeldItemStack();
+            ItemStack stack = frame.getItem();
             if (stack.isEmpty() || stack.getItem() != Items.FILLED_MAP) {
                 continue;
             }
@@ -197,7 +197,7 @@ public class MapArtTracker extends Module {
                 continue;
             }
 
-            String name = stack.getName().getString();
+            String name = stack.getHoverName().getString();
 
             MapRecord rec = maps.get(mapId);
             if (rec == null) {
@@ -218,7 +218,7 @@ public class MapArtTracker extends Module {
                 continue;
             }
 
-            Box box = frame.getBoundingBox();
+            AABB box = frame.getBoundingBox();
 
             Color fill = new Color(sideColor.get());
             Color outline = new Color(lineColor.get());
@@ -243,17 +243,17 @@ public class MapArtTracker extends Module {
             return;
         }
 
-        for (Entity entity : mc.world.getEntities()) {
-            if (!(entity instanceof ItemFrameEntity frame)) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (!(entity instanceof ItemFrame frame)) {
                 continue;
             }
 
-            ItemStack stack = frame.getHeldItemStack();
+            ItemStack stack = frame.getItem();
             if (stack.isEmpty() || stack.getItem() != Items.FILLED_MAP) {
                 continue;
             }
 
-            String name = stack.getName().getString();
+            String name = stack.getHoverName().getString();
 
             Vector3d vec3 = new Vector3d(entity.getX(), entity.getY(), entity.getZ());
 
@@ -272,21 +272,21 @@ public class MapArtTracker extends Module {
 
     @EventHandler
     private void onMouseClick(MouseClickEvent event) {
-        if (event.action != KeyAction.Press || event.button() != GLFW_MOUSE_BUTTON_MIDDLE || mc.currentScreen != null) {
+        if (event.action != KeyAction.Press || event.button() != GLFW_MOUSE_BUTTON_MIDDLE || mc.screen != null) {
             return;
         }
 
-        HitResult hr = mc.crosshairTarget;
+        HitResult hr = mc.hitResult;
         if (hr instanceof EntityHitResult ehr) {
             Entity e = ehr.getEntity();
-            if (e instanceof ItemFrameEntity frame) {
-                ItemStack stack = frame.getHeldItemStack();
+            if (e instanceof ItemFrame frame) {
+                ItemStack stack = frame.getItem();
                 if (!stack.isEmpty() && stack.getItem() == Items.FILLED_MAP) {
                     int mapId = getMapId(stack);
                     if (isCollected(mapId)) {
-                        removeCollected(mapId, stack.getName().getString());
+                        removeCollected(mapId, stack.getHoverName().getString());
                     } else {
-                        markCollected(mapId, stack.getName().getString());
+                        markCollected(mapId, stack.getHoverName().getString());
                     }
                 }
             }
@@ -294,12 +294,12 @@ public class MapArtTracker extends Module {
     }
 
     private int getMapId(ItemStack stack) {
-        if (mc.world == null || stack == null || stack.getItem() != Items.FILLED_MAP) {
+        if (mc.level == null || stack == null || stack.getItem() != Items.FILLED_MAP) {
             return -1;
         }
 
         try {
-            MapIdComponent mapId = stack.get(DataComponentTypes.MAP_ID);
+            MapId mapId = stack.get(DataComponents.MAP_ID);
 
             if (mapId == null) {
                 return -1;
@@ -435,23 +435,23 @@ public class MapArtTracker extends Module {
     }
 
     private String getServerSafeName() {
-        if (mc.isInSingleplayer()) {
-            String[] array = mc.getServer().getSavePath(WorldSavePath.ROOT).toString().replace(':', '_')
+        if (mc.isLocalServer()) {
+            String[] array = mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).toString().replace(':', '_')
                     .split("/|\\\\");
             return array[array.length - 2];
         }
 
-        return mc.getCurrentServerEntry().address.replace(':', '_');
+        return mc.getCurrentServer().ip.replace(':', '_');
     }
 
     private void initStoreFile() {
         String serverSafe = getServerSafeName();
         try {
-            Path dir = mc.runDirectory.toPath().resolve("found-maps");
+            Path dir = mc.gameDirectory.toPath().resolve("found-maps");
             Files.createDirectories(dir);
             storeFile = dir.resolve(serverSafe + ".dat");
         } catch (IOException e) {
-            storeFile = mc.runDirectory.toPath().resolve("found-maps.dat");
+            storeFile = mc.gameDirectory.toPath().resolve("found-maps.dat");
         }
     }
 

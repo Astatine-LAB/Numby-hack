@@ -22,10 +22,10 @@ import meteordevelopment.meteorclient.settings.StringSetting;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.HoverEvent;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 
 /**
  * made by cqb13
@@ -113,12 +113,12 @@ public class ChatEncryption extends Module {
             }
 
             if (replaceOriginal.get() && decryptedMsg != null) {
-                event.setMessage(Text.literal("<" + author + "> " + decryptedMsg).append(Text.literal(" [Decrypted]")
+                event.setMessage(Component.literal("<" + author + "> " + decryptedMsg).append(Component.literal(" [Decrypted]")
                         .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(feedbackColor.get().getPacked())))));
             } else {
-                event.setMessage(Text.literal("<" + author + "> " + string + " ").append(Text.literal("[Encrypted]")
+                event.setMessage(Component.literal("<" + author + "> " + string + " ").append(Component.literal("[Encrypted]")
                         .setStyle(Style.EMPTY.withColor(TextColor.fromRgb(feedbackColor.get().getPacked()))
-                                .withHoverEvent(new HoverEvent.ShowText(Text.literal(decryptedMsg)
+                                .withHoverEvent(new HoverEvent.ShowText(Component.literal(decryptedMsg)
                                         .setStyle(Style.EMPTY
                                                 .withColor(TextColor.fromRgb(feedbackColor.get().getPacked()))))))));
             }

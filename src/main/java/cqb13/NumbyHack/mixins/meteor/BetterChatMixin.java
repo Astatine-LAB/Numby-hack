@@ -19,10 +19,10 @@ import meteordevelopment.meteorclient.systems.modules.misc.BetterChat;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.color.RainbowColor;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextColor;
 
 @Mixin(value = BetterChat.class, remap = false)
 public abstract class BetterChatMixin extends Module {
@@ -118,19 +118,19 @@ public abstract class BetterChatMixin extends Module {
 
     RainbowColor numby$prefixChroma = new RainbowColor();
 
-    private MutableText numby$getPrefix() {
-        MutableText logo = Text.literal("");
-        MutableText prefix = Text.literal("");
+    private MutableComponent numby$getPrefix() {
+        MutableComponent logo = Component.literal("");
+        MutableComponent prefix = Component.literal("");
         String logoT = "Numby hack";
         if (numby$customPrefix.get())
             logoT = numby$prefixText.get();
         if (numby$customPrefixColor.get() && !numby$chromaPrefix.get())
-            logo.append(Text.literal(logoT)
+            logo.append(Component.literal(logoT)
                     .setStyle(logo.getStyle().withColor(TextColor.fromRgb(numby$prefixColor.get().getPacked()))));
         if (numby$chromaPrefix.get() && !numby$customPrefixColor.get()) {
             numby$prefixChroma.setSpeed(numby$chromaSpeed.get() / 100);
             for (int i = 0, n = logoT.length(); i < n; i++)
-                logo.append(Text.literal(String.valueOf(logoT.charAt(i))))
+                logo.append(Component.literal(String.valueOf(logoT.charAt(i))))
                         .setStyle(
                                 logo.getStyle().withColor(TextColor.fromRgb(numby$prefixChroma.getNext().getPacked())));
         }
@@ -140,7 +140,7 @@ public abstract class BetterChatMixin extends Module {
             } else {
                 logo.append("Numby hack");
             }
-            logo.setStyle(logo.getStyle().withFormatting(Formatting.RED));
+            logo.setStyle(logo.getStyle().applyFormat(ChatFormatting.RED));
         }
         if (numby$themeBrackets.get()) {
             if (numby$customPrefixColor.get() && !numby$chromaPrefix.get())
@@ -160,7 +160,7 @@ public abstract class BetterChatMixin extends Module {
                 prefix.append("] ");
             }
         } else {
-            prefix.setStyle(prefix.getStyle().withFormatting(Formatting.GRAY));
+            prefix.setStyle(prefix.getStyle().applyFormat(ChatFormatting.GRAY));
             prefix.append("[");
             prefix.append(logo);
             prefix.append("] ");

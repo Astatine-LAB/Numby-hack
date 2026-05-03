@@ -3,7 +3,7 @@ package cqb13.NumbyHack.modules.commands;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 
 import meteordevelopment.meteorclient.commands.Command;
-import net.minecraft.command.CommandSource;
+import net.minecraft.commands.SharedSuggestionProvider;
 
 public class ClearChat extends Command {
     public ClearChat() {
@@ -11,9 +11,9 @@ public class ClearChat extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.executes(context -> {
-            mc.inGameHud.getChatHud().clear(false);
+            mc.gui.getChat().clearMessages(false);
             return SINGLE_SUCCESS;
         });
     }

@@ -7,10 +7,10 @@ import meteordevelopment.meteorclient.commands.Command;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.world.Dimension;
-import net.minecraft.command.CommandSource;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.phys.Vec3;
 
 public class CoordinateConverter extends Command {
     public CoordinateConverter() {
@@ -20,7 +20,7 @@ public class CoordinateConverter extends Command {
     }
 
     @Override
-    public void build(LiteralArgumentBuilder<CommandSource> builder) {
+    public void build(LiteralArgumentBuilder<SharedSuggestionProvider> builder) {
         builder.then(argument("x", IntegerArgumentType.integer(-2147483648, 2147483647))
                 .then(argument("z", IntegerArgumentType.integer(-2147483648, 2147483647))
                         .executes(context -> {
@@ -29,8 +29,8 @@ public class CoordinateConverter extends Command {
 
                             Dimension targetDimension = getOppositeDimension();
 
-                            Vec3d coords = convertCoords(xLoc, zLoc, targetDimension);
-                            MutableText text = Text.literal("Location in ");
+                            Vec3 coords = convertCoords(xLoc, zLoc, targetDimension);
+                            MutableComponent text = Component.literal("Location in ");
                             text.append(targetDimension.toString() + ": ");
                             text.append(ChatUtils.formatCoords(coords));
                             text.append(".");
@@ -49,11 +49,11 @@ public class CoordinateConverter extends Command {
         }
     }
 
-    private static Vec3d convertCoords(int xLoc, int zLoc, Dimension targetDimension) {
+    private static Vec3 convertCoords(int xLoc, int zLoc, Dimension targetDimension) {
         if (targetDimension.equals(Dimension.Nether)) {
-            return new Vec3d(xLoc / 8, mc.player.getY(), zLoc / 8);
+            return new Vec3(xLoc / 8, mc.player.getY(), zLoc / 8);
         } else {
-            return new Vec3d(xLoc * 8, mc.player.getY(), zLoc * 8);
+            return new Vec3(xLoc * 8, mc.player.getY(), zLoc * 8);
         }
     }
 }

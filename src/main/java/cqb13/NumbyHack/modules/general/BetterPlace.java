@@ -14,11 +14,11 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.item.BlockItem;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 public class BetterPlace extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -76,9 +76,9 @@ public class BetterPlace extends Module {
     @EventHandler
     private void onTick(TickEvent.Post event) {
         setHitResult();
-        if (hitResult instanceof BlockHitResult && mc.player.getMainHandStack().getItem() instanceof BlockItem
-                && mc.options.useKey.isPressed()) {
-            BlockUtils.place(((BlockHitResult) hitResult).getBlockPos(), Hand.MAIN_HAND,
+        if (hitResult instanceof BlockHitResult && mc.player.getMainHandItem().getItem() instanceof BlockItem
+                && mc.options.keyUse.isDown()) {
+            BlockUtils.place(((BlockHitResult) hitResult).getBlockPos(), InteractionHand.MAIN_HAND,
                     mc.player.getInventory().getSelectedSlot(), false, 0, true, true, false);
         }
     }
@@ -86,8 +86,8 @@ public class BetterPlace extends Module {
     @EventHandler
     private void onRender(Render3DEvent event) {
         if (!(hitResult instanceof BlockHitResult)
-                || !mc.world.getBlockState(((BlockHitResult) hitResult).getBlockPos()).isReplaceable()
-                || !(mc.player.getMainHandStack().getItem() instanceof BlockItem)
+                || !mc.level.getBlockState(((BlockHitResult) hitResult).getBlockPos()).canBeReplaced()
+                || !(mc.player.getMainHandItem().getItem() instanceof BlockItem)
                 || !render.get())
             return;
 
@@ -99,7 +99,7 @@ public class BetterPlace extends Module {
     private void setHitResult() {
         final double r = customRange.get() ? range.get() : 4.5;
         for (int i = (int) r; i > 0; i -= 1D) {
-            hitResult = mc.getCameraEntity().raycast(Math.min(r, i), 0, false);
+            hitResult = mc.getCameraEntity().pick(Math.min(r, i), 0, false);
             if (hitResult instanceof BlockHitResult && isValid(((BlockHitResult) hitResult).getBlockPos()))
                 return;
         }
@@ -107,6 +107,6 @@ public class BetterPlace extends Module {
     }
 
     private boolean isValid(BlockPos pos) {
-        return !pos.equals(mc.player.getBlockPos()) && BlockUtils.getPlaceSide(pos) != null;
+        return !pos.equals(mc.player.blockPosition()) && BlockUtils.getPlaceSide(pos) != null;
     }
 }

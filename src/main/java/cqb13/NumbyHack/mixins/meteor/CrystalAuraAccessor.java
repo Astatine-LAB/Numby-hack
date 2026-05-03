@@ -4,7 +4,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
 import meteordevelopment.meteorclient.systems.modules.combat.CrystalAura;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.world.entity.LivingEntity;
 
 @Mixin(CrystalAura.class)
 public interface CrystalAuraAccessor {

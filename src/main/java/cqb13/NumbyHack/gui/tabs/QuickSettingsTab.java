@@ -9,7 +9,7 @@ import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
 import meteordevelopment.meteorclient.gui.widgets.containers.WVerticalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.screens.Screen;
 
 public class QuickSettingsTab extends Tab {
     public QuickSettingsTab() {
@@ -40,7 +40,7 @@ public class QuickSettingsTab extends Tab {
 
             WButton hudToggle = list.add(theme.button("Toggle HUD")).expandX().widget();
             hudToggle.action = () -> {
-                toggleHUD(!mc.options.hudHidden);
+                toggleHUD(!mc.options.hideGui);
             };
 
             WButton pauseOnLostFocusToggle = list.add(theme.button("Toggle Pause on Lost Focus")).expandX().widget();
@@ -57,7 +57,7 @@ public class QuickSettingsTab extends Tab {
             WButton smoothCameraToggle = list.add(theme.button("Toggle Smooth Camera")).expandX()
                     .widget();
             smoothCameraToggle.action = () -> {
-                toggleSmoothCamera(!mc.options.smoothCameraEnabled);
+                toggleSmoothCamera(!mc.options.smoothCamera);
             };
 
             WButton advancedItemTooltipsToggle = list.add(theme.button("Toggle Advanced Tooltips")).expandX()
@@ -76,7 +76,7 @@ public class QuickSettingsTab extends Tab {
     }
 
     private static void toggleHUD(Boolean b) {
-        mc.options.hudHidden = b;
+        mc.options.hideGui = b;
         sendChatInfo("HUD", b ? "hidden" : "shown");
     }
 
@@ -91,7 +91,7 @@ public class QuickSettingsTab extends Tab {
     }
 
     private static void toggleSmoothCamera(Boolean b) {
-        mc.options.smoothCameraEnabled = b;
+        mc.options.smoothCamera = b;
         sendChatInfo("Smooth Camera", b ? "enabled" : "disabled");
     }
 

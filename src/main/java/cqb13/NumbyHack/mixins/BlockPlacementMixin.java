@@ -7,42 +7,42 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import cqb13.NumbyHack.modules.general.CarpetPlacer;
 import meteordevelopment.meteorclient.systems.modules.Modules;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.CarpetBlock;
-import net.minecraft.client.network.ClientPlayerEntity;
-import net.minecraft.client.network.ClientPlayerInteractionManager;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.client.multiplayer.MultiPlayerGameMode;
+import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CarpetBlock;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
 
-@Mixin(ClientPlayerInteractionManager.class)
+@Mixin(MultiPlayerGameMode.class)
 public class BlockPlacementMixin {
 
-    @Inject(method = "interactBlock", at = @At("HEAD"), cancellable = true)
-    private void preventBlockPlacement(ClientPlayerEntity player, Hand hand, BlockHitResult hitResult,
-            CallbackInfoReturnable<ActionResult> cir) {
+    @Inject(method = "useItemOn", at = @At("HEAD"), cancellable = true)
+    private void preventBlockPlacement(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult,
+            CallbackInfoReturnable<InteractionResult> cir) {
         CarpetPlacer carpetPlacer = Modules.get().get(CarpetPlacer.class);
 
         if (carpetPlacer == null || !carpetPlacer.isActive() || !carpetPlacer.isAntiStackEnabled()) {
             return;
         }
 
-        World world = player.getEntityWorld();
+        Level world = player.level();
         BlockPos hitPos = hitResult.getBlockPos();
-        ItemStack itemStack = player.getStackInHand(hand);
+        ItemStack itemStack = player.getItemInHand(hand);
 
         if (itemStack.getItem() instanceof BlockItem) {
-            BlockPos placePos = hitPos.offset(hitResult.getSide());
-            BlockPos belowPlacePos = placePos.down();
+            BlockPos placePos = hitPos.relative(hitResult.getDirection());
+            BlockPos belowPlacePos = placePos.below();
             BlockState blockBelow = world.getBlockState(belowPlacePos);
 
             if (shouldPreventPlacement(itemStack, blockBelow, carpetPlacer)) {
-                cir.setReturnValue(ActionResult.FAIL);
+                cir.setReturnValue(InteractionResult.FAIL);
             }
         }
     }

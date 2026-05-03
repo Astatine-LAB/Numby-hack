@@ -20,13 +20,13 @@ import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Block;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.ChestBlockEntity;
 
 /**
  * Original from Tanuki:
@@ -118,7 +118,7 @@ public class TanukiEgapFinder extends Module {
 
     @Override
     public void onActivate() {
-        BlockPos playerPos = mc.player.getBlockPos();
+        BlockPos playerPos = mc.player.blockPosition();
         spiralTraversal = new SpiralTraversal(playerPos.getX(), playerPos.getZ());
         resetState();
     }
@@ -130,7 +130,7 @@ public class TanukiEgapFinder extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Pre event) {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             debug("Tick skipped: world or player is null");
             return;
         }
@@ -176,7 +176,7 @@ public class TanukiEgapFinder extends Module {
         XZPos positionToTeleportTo = spiralTraversal.next();
         String command = "/tp %d ~ %d";
 
-        ChatUtils.info(Formatting.GREEN +
+        ChatUtils.info(ChatFormatting.GREEN +
                 String.format("Teleporting to new search area with the center at (%d, ~, %d)!",
                         positionToTeleportTo.x(), positionToTeleportTo.z()));
 
@@ -187,7 +187,7 @@ public class TanukiEgapFinder extends Module {
     private BlockPos findNearestChest() {
         for (BlockEntity blockEntity : Utils.blockEntities()) {
             if (blockEntity instanceof ChestBlockEntity && !blockEntity.isRemoved()) {
-                return blockEntity.getPos();
+                return blockEntity.getBlockPos();
             }
         }
 
@@ -224,8 +224,8 @@ public class TanukiEgapFinder extends Module {
     }
 
     private void placeComparator() {
-        BlockPos comparatorPos = currentChestPos.add(-1, 0, 0);
-        Block existingBlock = mc.world.getBlockState(comparatorPos).getBlock();
+        BlockPos comparatorPos = currentChestPos.offset(-1, 0, 0);
+        Block existingBlock = mc.level.getBlockState(comparatorPos).getBlock();
 
         if (existingBlock != Blocks.COMPARATOR) {
             String command = String.format("/setblock %d %d %d minecraft:comparator[facing=east]",
@@ -235,8 +235,8 @@ public class TanukiEgapFinder extends Module {
     }
 
     private void placeLeavesAndWaitForComparatorUpdate() {
-        BlockPos leavesPos = currentChestPos.add(-1, 1, 0);
-        Block existingBlock = mc.world.getBlockState(leavesPos).getBlock();
+        BlockPos leavesPos = currentChestPos.offset(-1, 1, 0);
+        Block existingBlock = mc.level.getBlockState(leavesPos).getBlock();
 
         if (existingBlock != Blocks.ACACIA_LEAVES) {
             String command = String.format("/setblock %d %d %d minecraft:acacia_leaves",
@@ -254,7 +254,7 @@ public class TanukiEgapFinder extends Module {
     }
 
     private void checkForEgap() {
-        Block block = mc.world.getBlockState(currentChestPos).getBlock();
+        Block block = mc.level.getBlockState(currentChestPos).getBlock();
 
         if (block != Blocks.CHEST) {
             return;
@@ -276,7 +276,7 @@ public class TanukiEgapFinder extends Module {
             return;
         }
 
-        Block resultBlock = mc.world.getBlockState(lastCheckedChestPos).getBlock();
+        Block resultBlock = mc.level.getBlockState(lastCheckedChestPos).getBlock();
 
         if (resultBlock == Blocks.DIAMOND_BLOCK) {
             handleEgapFound(lastCheckedChestPos);
@@ -291,10 +291,10 @@ public class TanukiEgapFinder extends Module {
         String coords = String.format("%d %d %d", pos.getX(), pos.getY(), pos.getZ());
 
         if (playSound.get() && mc.player != null) {
-            mc.player.playSound(SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
+            mc.player.playSound(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f, 1.0f);
         }
 
-        ChatUtils.info(Formatting.GREEN + "Found an egap (" + coords + ")!");
+        ChatUtils.info(ChatFormatting.GREEN + "Found an egap (" + coords + ")!");
 
         if (!writeCoordinatesToFile(coords)) {
             ChatUtils.error("Failed to write coordinates to file!");
@@ -376,7 +376,7 @@ public class TanukiEgapFinder extends Module {
     }
 
     private String getOutputFileName() {
-        if (mc.world == null) {
+        if (mc.level == null) {
             return OUTPUT_FILE_NAME + ".txt";
         }
 
@@ -388,10 +388,10 @@ public class TanukiEgapFinder extends Module {
     }
 
     private Long getWorldSeed() {
-        if (mc.getServer() != null) {
-            var worldProperties = mc.getServer().getSaveProperties();
+        if (mc.getSingleplayerServer() != null) {
+            var worldProperties = mc.getSingleplayerServer().getWorldData();
             if (worldProperties != null) {
-                return worldProperties.getGeneratorOptions().getSeed();
+                return worldProperties.worldGenOptions().seed();
             }
         }
         return null;

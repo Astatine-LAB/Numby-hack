@@ -25,13 +25,13 @@ import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Block;
-import net.minecraft.block.FallingBlock;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.FallingBlock;
+import net.minecraft.world.phys.Vec3;
 
 /**
  * based on Tanuki
@@ -131,8 +131,8 @@ public class SafetyNet extends Module {
     private final Pool<SafetyNet.RenderBlock> renderBlockPool = new Pool<>(SafetyNet.RenderBlock::new);
     private final List<SafetyNet.RenderBlock> renderBlocks = new ArrayList<>();
 
-    private final BlockPos.Mutable bp = new BlockPos.Mutable();
-    private final BlockPos.Mutable prevBp = new BlockPos.Mutable();
+    private final BlockPos.MutableBlockPos bp = new BlockPos.MutableBlockPos();
+    private final BlockPos.MutableBlockPos prevBp = new BlockPos.MutableBlockPos();
 
     private boolean lastWasSneaking;
     private double lastSneakingY;
@@ -144,7 +144,7 @@ public class SafetyNet extends Module {
 
     @Override
     public void onActivate() {
-        lastWasSneaking = mc.options.sneakKey.isPressed();
+        lastWasSneaking = mc.options.keyShift.isDown();
         if (lastWasSneaking)
             lastSneakingY = mc.player.getY();
 
@@ -167,16 +167,16 @@ public class SafetyNet extends Module {
         renderBlocks.removeIf(renderBlock -> renderBlock.ticks <= 0);
 
         if (safetyMode.get() == PlaceMode.AirPlace) {
-            Vec3d vec = mc.player.getEntityPos().add(mc.player.getVelocity()).add(0, -0.5f, 0);
-            bp.set(vec.getX(), vec.getY(), vec.getZ());
+            Vec3 vec = mc.player.position().add(mc.player.getDeltaMovement()).add(0, -0.5f, 0);
+            bp.set(vec.x(), vec.y(), vec.z());
 
         } else if (safetyMode.get() == PlaceMode.SafetyNet) {
             if (mc.player.getY() < (yLock.get() + safetyNetWindow.get()) - 1) {
-                if (mc.world.getBlockState(mc.player.getBlockPos().down()).isAir()) {
-                    mc.player.setVelocity(mc.player.getVelocity().getX(),
-                            mc.player.getVelocity().getY() * safetyNetMultiplier.get(), mc.player.getVelocity().getZ());
-                    Vec3d vec = mc.player.getEntityPos().add(mc.player.getVelocity()).add(0, -0.5f, 0);
-                    bp.set(vec.getX(), yLock.get(), vec.getZ());
+                if (mc.level.getBlockState(mc.player.blockPosition().below()).isAir()) {
+                    mc.player.setDeltaMovement(mc.player.getDeltaMovement().x(),
+                            mc.player.getDeltaMovement().y() * safetyNetMultiplier.get(), mc.player.getDeltaMovement().z());
+                    Vec3 vec = mc.player.position().add(mc.player.getDeltaMovement()).add(0, -0.5f, 0);
+                    bp.set(vec.x(), yLock.get(), vec.z());
                 } else {
                     info("Safetynet landed on block | disabling");
                     toggle();
@@ -184,23 +184,23 @@ public class SafetyNet extends Module {
             }
 
         } else {
-            if (BlockUtils.getPlaceSide(mc.player.getBlockPos().down()) != null) {
-                bp.set(mc.player.getBlockPos().down());
+            if (BlockUtils.getPlaceSide(mc.player.blockPosition().below()) != null) {
+                bp.set(mc.player.blockPosition().below());
 
             } else {
-                Vec3d pos = mc.player.getEntityPos();
+                Vec3 pos = mc.player.position();
                 pos = pos.add(0, -0.98f, 0);
-                pos.add(mc.player.getVelocity());
+                pos.add(mc.player.getDeltaMovement());
 
                 if (PlayerUtils.distanceTo(prevBp) > placeRange) {
                     List<BlockPos> blockPosArray = new ArrayList<>();
 
                     for (int x = (int) (mc.player.getX() - placeRange); x < mc.player.getX() + placeRange; x++) {
                         for (int z = (int) (mc.player.getZ() - placeRange); z < mc.player.getZ() + placeRange; z++) {
-                            for (int y = (int) Math.max(mc.world.getBottomY(), mc.player.getY() - placeRange); y < Math
-                                    .min(mc.world.getTopYInclusive(), mc.player.getY() + placeRange); y++) {
+                            for (int y = (int) Math.max(mc.level.getMinY(), mc.player.getY() - placeRange); y < Math
+                                    .min(mc.level.getMaxY(), mc.player.getY() + placeRange); y++) {
                                 bp.set(x, y, z);
-                                if (!mc.world.getBlockState(bp).isAir())
+                                if (!mc.level.getBlockState(bp).isAir())
                                     blockPosArray.add(new BlockPos(bp));
                             }
                         }
@@ -214,20 +214,20 @@ public class SafetyNet extends Module {
                     prevBp.set(blockPosArray.get(0));
                 }
 
-                Vec3d vecPrevBP = new Vec3d((double) prevBp.getX() + 0.5f,
+                Vec3 vecPrevBP = new Vec3((double) prevBp.getX() + 0.5f,
                         (double) prevBp.getY() + 0.5f,
                         (double) prevBp.getZ() + 0.5f);
 
-                Vec3d sub = pos.subtract(vecPrevBP);
+                Vec3 sub = pos.subtract(vecPrevBP);
                 Direction facing;
-                if (sub.getY() < -0.5f) {
+                if (sub.y() < -0.5f) {
                     facing = Direction.DOWN;
-                } else if (sub.getY() > 0.5f) {
+                } else if (sub.y() > 0.5f) {
                     facing = Direction.UP;
                 } else
-                    facing = Direction.getFacing(sub.getX(), 0, sub.getZ());
+                    facing = Direction.getApproximateNearest(sub.x(), 0, sub.z());
 
-                bp.set(prevBp.offset(facing));
+                bp.set(prevBp.relative(facing));
             }
         }
 
@@ -239,7 +239,7 @@ public class SafetyNet extends Module {
             return;
 
         // Move down if shifting
-        if (mc.options.sneakKey.isPressed() && !mc.options.jumpKey.isPressed()) {
+        if (mc.options.keyShift.isDown() && !mc.options.keyJump.isDown()) {
             if (lastSneakingY - mc.player.getY() < 0.1) {
                 lastWasSneaking = false;
                 return;
@@ -250,8 +250,8 @@ public class SafetyNet extends Module {
         if (!lastWasSneaking)
             lastSneakingY = mc.player.getY();
 
-        if (mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed()) {
-            mc.player.setVelocity(0, 0.42f, 0);
+        if (mc.options.keyJump.isDown() && !mc.options.keyShift.isDown()) {
+            mc.player.setDeltaMovement(0, 0.42f, 0);
         }
 
         if (BlockUtils.place(bp, item, rotate.get(), 50, renderSwing.get(), true)) {
@@ -259,13 +259,13 @@ public class SafetyNet extends Module {
             renderBlocks.add(renderBlockPool.get().set(bp));
 
             // Move player down so they are on top of the placed block ready to jump again
-            if (mc.options.jumpKey.isPressed() && !mc.options.sneakKey.isPressed() && !mc.player.isOnGround()
-                    && !mc.world.getBlockState(bp).isAir()) {
-                mc.player.setVelocity(0, -0.28f, 0);
+            if (mc.options.keyJump.isDown() && !mc.options.keyShift.isDown() && !mc.player.onGround()
+                    && !mc.level.getBlockState(bp).isAir()) {
+                mc.player.setDeltaMovement(0, -0.28f, 0);
             }
         }
 
-        if (!mc.world.getBlockState(bp).isAir()) {
+        if (!mc.level.getBlockState(bp).isAir()) {
             prevBp.set(bp);
         }
     }
@@ -281,9 +281,9 @@ public class SafetyNet extends Module {
         else if (blocksFilter.get() == SafetyNet.ListMode.Whitelist && !blocks.get().contains(block))
             return false;
 
-        if (!Block.isShapeFullCube(block.getDefaultState().getCollisionShape(mc.world, pos)))
+        if (!Block.isShapeFullBlock(block.defaultBlockState().getCollisionShape(mc.level, pos)))
             return false;
-        return !(block instanceof FallingBlock) || !FallingBlock.canFallThrough(mc.world.getBlockState(pos));
+        return !(block instanceof FallingBlock) || !FallingBlock.isFree(mc.level.getBlockState(pos));
     }
 
     @EventHandler
@@ -306,7 +306,7 @@ public class SafetyNet extends Module {
     }
 
     public static class RenderBlock {
-        public BlockPos.Mutable pos = new BlockPos.Mutable();
+        public BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
         public int ticks;
 
         public RenderBlock set(BlockPos blockPos) {

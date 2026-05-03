@@ -15,18 +15,18 @@ import meteordevelopment.meteorclient.MeteorClient;
 import meteordevelopment.meteorclient.events.entity.EntityAddedEvent;
 import meteordevelopment.meteorclient.events.world.TickEvent;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.client.option.Perspective;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.particle.ParticleEffect;
-import net.minecraft.particle.ParticleTypes;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.random.LocalRandom;
-import net.minecraft.util.math.random.Random;
-import net.minecraft.util.math.random.RandomSeed;
+import net.minecraft.client.CameraType;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.core.particles.ParticleOptions;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LightningBolt;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.levelgen.RandomSupport;
+import net.minecraft.world.level.levelgen.SingleThreadedRandomSource;
 
 /**
  * super-duper top secret file with hidden fun effects hihi :P
@@ -38,9 +38,9 @@ public class PlayerParticle {
     private static final UUID ThetaPride = UUID.fromString("a404936d-0e36-4185-9a16-1214e7e6d562");
     private static final UUID Number81 = UUID.fromString("bc48b56d-d2e2-4838-ae6d-bd26559c1267");
 
-    private static final Map<UUID, ParticleEffect> PLAYER_EFFECTS = new HashMap<>();
+    private static final Map<UUID, ParticleOptions> PLAYER_EFFECTS = new HashMap<>();
     private static boolean LIGHTNING_HAS_STRUCK = false;
-    private static final Random RANDOM = new LocalRandom(RandomSeed.getSeed());
+    private static final RandomSource RANDOM = new SingleThreadedRandomSource(RandomSupport.generateUniqueSeed());
     private static final List<UUID> LIGHTNING_UUIDS = Lists.newArrayList(cqb13, IcatIcatI, ThetaPride, Number81);
 
     /**
@@ -59,14 +59,14 @@ public class PlayerParticle {
 
     @EventHandler
     private static void onPostTickEvent(TickEvent.Post post) {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
-        for (AbstractClientPlayerEntity player : mc.world.getPlayers()) {
-            var uuid = player.getUuid();
+        for (AbstractClientPlayer player : mc.level.players()) {
+            var uuid = player.getUUID();
 
-            if (uuid.equals(mc.player.getUuid()) && mc.options.getPerspective() == Perspective.FIRST_PERSON) {
+            if (uuid.equals(mc.player.getUUID()) && mc.options.getCameraType() == CameraType.FIRST_PERSON) {
                 continue;
             }
 
@@ -79,53 +79,53 @@ public class PlayerParticle {
         }
     }
 
-    private static void displayParticleEffect(PlayerEntity player, ParticleEffect effect) {
-        if (mc.world == null || mc.player == null) {
+    private static void displayParticleEffect(Player player, ParticleOptions effect) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
         if (effect == ParticleTypes.SOUL) {
-            double x = player.getX() + (RANDOM.nextDouble() - 0.5D) * (double) player.getWidth();
+            double x = player.getX() + (RANDOM.nextDouble() - 0.5D) * (double) player.getBbWidth();
             double y = player.getY() + 0.1D;
-            double z = player.getZ() + (RANDOM.nextDouble() - 0.5D) * (double) player.getHeight();
-            double velocityX = player.getVelocity().getX() * -0.2D;
+            double z = player.getZ() + (RANDOM.nextDouble() - 0.5D) * (double) player.getBbHeight();
+            double velocityX = player.getDeltaMovement().x() * -0.2D;
             double velocityY = 0.1D;
-            double velocityZ = player.getVelocity().getZ() * -0.2D;
-            mc.world.addParticleClient(effect, x, y, z, velocityX, velocityY, velocityZ);
+            double velocityZ = player.getDeltaMovement().z() * -0.2D;
+            mc.level.addParticle(effect, x, y, z, velocityX, velocityY, velocityZ);
         } else if (effect == ParticleTypes.HEART) {
-            if (mc.player.age % 2 == 0) {
-                var particleX = player.getParticleX(1.0D);
-                var particleY = player.getRandomBodyY() + 0.5D;
-                var particleZ = player.getParticleZ(1.0D);
+            if (mc.player.tickCount % 2 == 0) {
+                var particleX = player.getRandomX(1.0D);
+                var particleY = player.getRandomY() + 0.5D;
+                var particleZ = player.getRandomZ(1.0D);
                 double velocityX = RANDOM.nextGaussian() * 0.02D;
                 double velocityY = RANDOM.nextGaussian() * 0.02D;
                 double velocityZ = RANDOM.nextGaussian() * 0.02D;
-                mc.world.addParticleClient(effect, particleX, particleY, particleZ, velocityX, velocityY, velocityZ);
+                mc.level.addParticle(effect, particleX, particleY, particleZ, velocityX, velocityY, velocityZ);
             }
         } else {
             for (int i = 0; i < 2; ++i) {
-                double particleX = player.getParticleX(0.5D);
-                double particleY = player.getRandomBodyY() - 0.25D;
-                double particleZ = player.getParticleZ(0.5D);
+                double particleX = player.getRandomX(0.5D);
+                double particleY = player.getRandomY() - 0.25D;
+                double particleZ = player.getRandomZ(0.5D);
                 double velocityX = (RANDOM.nextDouble() - 0.5D) * 2.0D;
                 double velocityY = -RANDOM.nextDouble();
                 double velocityZ = (RANDOM.nextDouble() - 0.5D) * 2.0D;
-                mc.world.addParticleClient(effect, particleX, particleY, particleZ, velocityX, velocityY, velocityZ);
+                mc.level.addParticle(effect, particleX, particleY, particleZ, velocityX, velocityY, velocityZ);
             }
         }
     }
 
     @EventHandler
     private static void onEntityAdded(@NotNull EntityAddedEvent event) {
-        if (mc.world == null || mc.player == null) {
+        if (mc.level == null || mc.player == null) {
             return;
         }
 
-        if (event.entity.getUuid().equals(mc.player.getUuid())) {
+        if (event.entity.getUUID().equals(mc.player.getUUID())) {
             return;
         }
 
-        if (!LIGHTNING_UUIDS.contains(event.entity.getUuid())) {
+        if (!LIGHTNING_UUIDS.contains(event.entity.getUUID())) {
             return;
         }
 
@@ -133,17 +133,17 @@ public class PlayerParticle {
         double y = event.entity.getY();
         double z = event.entity.getZ();
 
-        var effect = new LightningEntity(EntityType.LIGHTNING_BOLT, mc.world);
-        effect.setPosition(x, y, z);
-        effect.refreshPositionAfterTeleport(x, y, z);
+        var effect = new LightningBolt(EntityType.LIGHTNING_BOLT, mc.level);
+        effect.setPos(x, y, z);
+        effect.snapTo(x, y, z);
 
-        mc.world.addEntity(effect);
+        mc.level.addEntity(effect);
 
         if (!LIGHTNING_HAS_STRUCK) {
-            mc.world.playSound(mc.player, x, y, z, SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.WEATHER,
+            mc.level.playSound(mc.player, x, y, z, SoundEvents.LIGHTNING_BOLT_THUNDER, SoundSource.WEATHER,
                     10000.0F,
                     0.16000001F);
-            mc.world.playSound(mc.player, x, y, z, SoundEvents.ENTITY_LIGHTNING_BOLT_IMPACT, SoundCategory.WEATHER,
+            mc.level.playSound(mc.player, x, y, z, SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.WEATHER,
                     2.0F,
                     0.1F);
             LIGHTNING_HAS_STRUCK = true;

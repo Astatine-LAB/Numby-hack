@@ -11,7 +11,7 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.level.ChunkPos;
 
 /**
  * made by cqb13
@@ -84,10 +84,10 @@ public class ChunkBorders extends Module {
 
     @EventHandler
     private void onRender(Render3DEvent event) {
-        if (mc.world == null || mc.player == null)
+        if (mc.level == null || mc.player == null)
             return;
 
-        ChunkPos center = new ChunkPos(mc.player.getBlockPos());
+        ChunkPos center = new ChunkPos(mc.player.blockPosition());
         int r = range.get();
 
         double y;
@@ -117,8 +117,8 @@ public class ChunkBorders extends Module {
                         center.x + dx,
                         center.z + dz);
 
-                int startX = chunk.getStartX();
-                int startZ = chunk.getStartZ();
+                int startX = chunk.getMinBlockX();
+                int startZ = chunk.getMinBlockZ();
 
                 event.renderer.box(
                         startX, y, startZ,

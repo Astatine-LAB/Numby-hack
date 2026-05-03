@@ -14,11 +14,11 @@ import meteordevelopment.meteorclient.systems.friends.Friends;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.play.DeathMessageS2CPacket;
-import net.minecraft.network.packet.s2c.play.HealthUpdateS2CPacket;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundPlayerCombatKillPacket;
+import net.minecraft.network.protocol.game.ClientboundSetHealthPacket;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * made by cqb13
@@ -112,12 +112,12 @@ public class ConditionToggle extends Module {
     // death toggle and damage toggle
     @EventHandler
     private void onPacketReceive(PacketEvent.Receive event) {
-        if (event.packet instanceof DeathMessageS2CPacket packet) {
-            Entity entity = mc.world.getEntityById(packet.playerId());
+        if (event.packet instanceof ClientboundPlayerCombatKillPacket packet) {
+            Entity entity = mc.level.getEntity(packet.playerId());
             if (entity == mc.player && death.get()) {
                 toggleModules(deathOnToggleModules.get(), deathOffToggleModules.get());
             }
-        } else if (event.packet instanceof HealthUpdateS2CPacket packet) {
+        } else if (event.packet instanceof ClientboundSetHealthPacket packet) {
             if (mc.player.getHealth() - packet.getHealth() > 0 && damage.get()) {
                 toggleModules(damageOnToggleModules.get(), damageOffToggleModules.get());
             }
@@ -135,14 +135,14 @@ public class ConditionToggle extends Module {
     // player toggle
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        for (Entity entity : mc.world.getEntities()) {
-            if (entity instanceof PlayerEntity) {
-                if (entity.getUuid() != mc.player.getUuid()) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof Player) {
+                if (entity.getUUID() != mc.player.getUUID()) {
                     if (!ignoreFriends.get() && entity != mc.player) {
                         if (player.get()) {
                             toggleModules(playerOnToggleModules.get(), playerOffToggleModules.get());
                         }
-                    } else if (ignoreFriends.get() && !Friends.get().isFriend((PlayerEntity) entity)) {
+                    } else if (ignoreFriends.get() && !Friends.get().isFriend((Player) entity)) {
                         if (player.get()) {
                             toggleModules(playerOnToggleModules.get(), playerOffToggleModules.get());
                         }
@@ -156,14 +156,14 @@ public class ConditionToggle extends Module {
         for (Module module : offModules) {
             if (module.isActive()) {
                 if (this.chatFeedback) {
-                    ChatUtils.sendMsg(Text.of("Deactivated " + module.name));
+                    ChatUtils.sendMsg(Component.nullToEmpty("Deactivated " + module.name));
                 }
                 module.toggle();
             }
         }
         for (Module module : onModules) {
             if (!module.isActive()) {
-                ChatUtils.sendMsg(Text.of("Activated " + module.name));
+                ChatUtils.sendMsg(Component.nullToEmpty("Activated " + module.name));
                 module.toggle();
             }
         }

@@ -8,9 +8,9 @@ import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.utils.misc.Names;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 
 /**
  * made by cqb13
@@ -35,13 +35,13 @@ public class NoStrip extends Module {
     }
 
     private boolean shouldInteractBlock(BlockHitResult hitResult) {
-        if (mc.player.getMainHandStack().getItem().toString().contains("axe")) {
-            if (mc.crosshairTarget.getType() == HitResult.Type.BLOCK) {
-                BlockPos pos = ((BlockHitResult) mc.crosshairTarget).getBlockPos();
-                String result = Names.get(mc.world.getBlockState(pos).getBlock());
+        if (mc.player.getMainHandItem().getItem().toString().contains("axe")) {
+            if (mc.hitResult.getType() == HitResult.Type.BLOCK) {
+                BlockPos pos = ((BlockHitResult) mc.hitResult).getBlockPos();
+                String result = Names.get(mc.level.getBlockState(pos).getBlock());
                 if (result.contains("Log") || result.contains("Crimson Stem") || result.contains("Warped Stem")) {
                     if (swingHand.get())
-                        mc.player.swingHand(mc.player.getActiveHand());
+                        mc.player.swing(mc.player.getUsedItemHand());
                     if (chatFeedback)
                         info("You can't strip logs!");
                     return false;

@@ -29,12 +29,12 @@ import meteordevelopment.meteorclient.utils.render.WireframeEntityRenderer;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.Dimension;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.text.Text;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 
 public class LogOutSpots extends Module {
 
@@ -112,8 +112,8 @@ public class LogOutSpots extends Module {
 
     private final List<Entry> players = new ArrayList<>();
 
-    private final List<PlayerListEntry> lastPlayerList = new ArrayList<>();
-    private final List<PlayerEntity> lastPlayers = new ArrayList<>();
+    private final List<PlayerInfo> lastPlayerList = new ArrayList<>();
+    private final List<Player> lastPlayers = new ArrayList<>();
 
     private int timer;
     private Dimension lastDimension;
@@ -125,7 +125,7 @@ public class LogOutSpots extends Module {
 
     @Override
     public void onActivate() {
-        lastPlayerList.addAll(mc.getNetworkHandler().getPlayerList());
+        lastPlayerList.addAll(mc.getConnection().getOnlinePlayers());
         updateLastPlayers();
 
         timer = 10;
@@ -140,19 +140,19 @@ public class LogOutSpots extends Module {
 
     private void updateLastPlayers() {
         lastPlayers.clear();
-        for (Entity entity : mc.world.getEntities()) {
-            if (entity instanceof PlayerEntity)
-                lastPlayers.add((PlayerEntity) entity);
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof Player)
+                lastPlayers.add((Player) entity);
         }
     }
 
     @EventHandler
     private void onEntityAdded(EntityAddedEvent event) {
-        if (event.entity instanceof PlayerEntity) {
+        if (event.entity instanceof Player) {
             int toRemove = -1;
 
             for (int i = 0; i < players.size(); i++) {
-                if (players.get(i).uuid.equals(event.entity.getUuid())) {
+                if (players.get(i).uuid.equals(event.entity.getUUID())) {
                     toRemove = i;
                     break;
                 }
@@ -166,14 +166,14 @@ public class LogOutSpots extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (mc.getNetworkHandler().getPlayerList().size() != lastPlayerList.size()) {
-            for (PlayerListEntry entry : lastPlayerList) {
-                if (mc.getNetworkHandler().getPlayerList().stream()
+        if (mc.getConnection().getOnlinePlayers().size() != lastPlayerList.size()) {
+            for (PlayerInfo entry : lastPlayerList) {
+                if (mc.getConnection().getOnlinePlayers().stream()
                         .anyMatch(playerListEntry -> playerListEntry.getProfile().equals(entry.getProfile())))
                     continue;
 
-                for (PlayerEntity player : lastPlayers) {
-                    if (player.getUuid().equals(entry.getProfile().id())) {
+                for (Player player : lastPlayers) {
+                    if (player.getUUID().equals(entry.getProfile().id())) {
                         boolean validArmor = true;
                         if (armorCheck.get()) {
                             for (int position = 1; position <= 4; position++) {
@@ -190,7 +190,7 @@ public class LogOutSpots extends Module {
                             break;
 
                         if (notification.get()) {
-                            ChatUtils.sendMsg(Text.literal(player.getName().getString() + " Logged out!"));
+                            ChatUtils.sendMsg(Component.literal(player.getName().getString() + " Logged out!"));
                         }
                         add(new Entry(player));
                         break;
@@ -199,7 +199,7 @@ public class LogOutSpots extends Module {
             }
 
             lastPlayerList.clear();
-            lastPlayerList.addAll(mc.getNetworkHandler().getPlayerList());
+            lastPlayerList.addAll(mc.getConnection().getOnlinePlayers());
             updateLastPlayers();
         }
 
@@ -221,14 +221,14 @@ public class LogOutSpots extends Module {
         players.add(entry);
     }
 
-    private ItemStack getItem(int index, PlayerEntity entity) {
+    private ItemStack getItem(int index, Player entity) {
         return switch (index) {
-            case 0 -> entity.getMainHandStack();
-            case 1 -> entity.getEquippedStack(EquipmentSlot.HEAD);
-            case 2 -> entity.getEquippedStack(EquipmentSlot.CHEST);
-            case 3 -> entity.getEquippedStack(EquipmentSlot.LEGS);
-            case 4 -> entity.getEquippedStack(EquipmentSlot.FEET);
-            case 5 -> entity.getOffHandStack();
+            case 0 -> entity.getMainHandItem();
+            case 1 -> entity.getItemBySlot(EquipmentSlot.HEAD);
+            case 2 -> entity.getItemBySlot(EquipmentSlot.CHEST);
+            case 3 -> entity.getItemBySlot(EquipmentSlot.LEGS);
+            case 4 -> entity.getItemBySlot(EquipmentSlot.FEET);
+            case 5 -> entity.getOffhandItem();
             default -> ItemStack.EMPTY;
         };
     }
@@ -257,21 +257,21 @@ public class LogOutSpots extends Module {
         public final String name;
         public final int health;
         public final String healthText;
-        PlayerEntity entity;
+        Player entity;
 
-        public Entry(PlayerEntity entity) {
+        public Entry(Player entity) {
 
             passed.reset();
-            halfWidth = entity.getWidth() / 2;
+            halfWidth = entity.getBbWidth() / 2;
             x = entity.getX() - halfWidth;
             y = entity.getY();
             z = entity.getZ() - halfWidth;
 
-            height = entity.getBoundingBox().getLengthY();
+            height = entity.getBoundingBox().getYsize();
 
             this.entity = entity;
 
-            uuid = entity.getUuid();
+            uuid = entity.getUUID();
             name = entity.getName().getString();
             health = Math.round(entity.getHealth() + entity.getAbsorptionAmount());
 
@@ -284,7 +284,7 @@ public class LogOutSpots extends Module {
         }
 
         public void render2D() {
-            if (PlayerUtils.distanceToCamera(x, y, z) > mc.options.getViewDistance().getValue() * 16)
+            if (PlayerUtils.distanceToCamera(x, y, z) > mc.options.renderDistance().get() * 16)
                 return;
 
             TextRenderer text = TextRenderer.get();

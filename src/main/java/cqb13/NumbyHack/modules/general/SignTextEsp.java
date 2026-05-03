@@ -17,10 +17,10 @@ import meteordevelopment.meteorclient.utils.render.NametagUtils;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.meteorclient.utils.world.BlockEntityIterator;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
-import net.minecraft.block.entity.SignText;
-import net.minecraft.text.Text;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SignBlockEntity;
+import net.minecraft.world.level.block.entity.SignText;
 
 /**
  * made by cqb13
@@ -83,11 +83,11 @@ public class SignTextEsp extends Module {
         while (it.hasNext()) {
             BlockEntity entity = it.next();
 
-            if (PlayerUtils.isWithin(entity.getPos(), (double) nearDistance.get()) && hideWhenNear.get()) {
+            if (PlayerUtils.isWithin(entity.getBlockPos(), (double) nearDistance.get()) && hideWhenNear.get()) {
                 continue;
             }
 
-            if (!PlayerUtils.isWithin(entity.getPos(), (double) farDistance.get()) && hideWhenFar.get()) {
+            if (!PlayerUtils.isWithin(entity.getBlockPos(), (double) farDistance.get()) && hideWhenFar.get()) {
                 continue;
             }
 
@@ -96,11 +96,11 @@ public class SignTextEsp extends Module {
             }
 
             SignText text = signEntity.getText(true);
-            Text[] msgs = text.getMessages(true);
+            Component[] msgs = text.getMessages(true);
 
             renderNametagLines(
-                    new Vector3d(entity.getPos().getX() + 0.5, entity.getPos().getY() + 0.5,
-                            entity.getPos().getZ() + 0.5),
+                    new Vector3d(entity.getBlockPos().getX() + 0.5, entity.getBlockPos().getY() + 0.5,
+                            entity.getBlockPos().getZ() + 0.5),
                     textScale.get(),
                     TextRenderer.get(),
                     textColor.get(),

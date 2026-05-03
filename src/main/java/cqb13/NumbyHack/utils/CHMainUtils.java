@@ -3,18 +3,18 @@ package cqb13.NumbyHack.utils;
 import static meteordevelopment.meteorclient.MeteorClient.mc;
 
 import meteordevelopment.meteorclient.events.packets.PacketEvent;
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.s2c.play.EntityStatusS2CPacket;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.entry.RegistryEntry;
+import net.minecraft.core.Holder;
+import net.minecraft.network.protocol.game.ClientboundEntityEventPacket;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 
 public class CHMainUtils {
     public static Integer lavaIsWithinRange(int range) {
         for (int i = 0; i < range; i++) {
-            if (mc.world.getBlockState(mc.player.getBlockPos().down(i)).getBlock().getTranslationKey()
+            if (mc.level.getBlockState(mc.player.blockPosition().below(i)).getBlock().getDescriptionId()
                     .contains("lava")) {
                 return i;
             }
@@ -66,18 +66,18 @@ public class CHMainUtils {
     public static Entity deadEntity;
 
     public static boolean isDeathPacket(PacketEvent.Receive event) {
-        if (event.packet instanceof EntityStatusS2CPacket packet) {
-            if (packet.getStatus() == 3) {
-                deadEntity = packet.getEntity(mc.world);
-                return deadEntity instanceof PlayerEntity;
+        if (event.packet instanceof ClientboundEntityEventPacket packet) {
+            if (packet.getEventId() == 3) {
+                deadEntity = packet.getEntity(mc.level);
+                return deadEntity instanceof Player;
             }
         }
         return false;
     }
 
-    public static int getEnchantmentLevel(ItemStack stack, RegistryKey<Enchantment> enchantment) {
-        for (RegistryEntry<Enchantment> enchantments : stack.getEnchantments().getEnchantments()) {
-            if (enchantments.toString().contains(enchantment.getValue().toString())) {
+    public static int getEnchantmentLevel(ItemStack stack, ResourceKey<Enchantment> enchantment) {
+        for (Holder<Enchantment> enchantments : stack.getEnchantments().keySet()) {
+            if (enchantments.toString().contains(enchantment.identifier().toString())) {
                 return stack.getEnchantments().getLevel(enchantments);
             }
         }

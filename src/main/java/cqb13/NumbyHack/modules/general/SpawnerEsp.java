@@ -23,12 +23,12 @@ import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.MobSpawnerBlockEntity;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.SpawnerBlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.phys.AABB;
 
 /**
  * made by cqb13
@@ -251,13 +251,13 @@ public class SpawnerEsp extends Module {
 
     @EventHandler
     private void onPreTick(TickEvent.Pre event) {
-        if (mc.world == null || mc.player == null)
+        if (mc.level == null || mc.player == null)
             return;
-        AtomicReferenceArray<WorldChunk> chunks = mc.world.getChunkManager().chunks.chunks;
-        Set<WorldChunk> chunkSet = new HashSet<>();
+        AtomicReferenceArray<LevelChunk> chunks = mc.level.getChunkSource().storage.chunks;
+        Set<LevelChunk> chunkSet = new HashSet<>();
 
         for (int i = 0; i < chunks.length(); i++) {
-            WorldChunk chunk = chunks.get(i);
+            LevelChunk chunk = chunks.get(i);
             if (chunk != null) {
                 chunkSet.add(chunk);
             }
@@ -266,23 +266,23 @@ public class SpawnerEsp extends Module {
         chunkSet.forEach(chunk -> extracted(chunk));
     }
 
-    private void extracted(WorldChunk chunk) {
+    private void extracted(LevelChunk chunk) {
         List<BlockEntity> blockEntities = new ArrayList<>(chunk.getBlockEntities().values());
 
         for (BlockEntity blockEntity : blockEntities) {
-            if (!(blockEntity instanceof MobSpawnerBlockEntity))
+            if (!(blockEntity instanceof SpawnerBlockEntity))
                 continue;
 
-            MobSpawnerBlockEntity spawner = (MobSpawnerBlockEntity) blockEntity;
-            BlockPos pos = spawner.getPos();
+            SpawnerBlockEntity spawner = (SpawnerBlockEntity) blockEntity;
+            BlockPos pos = spawner.getBlockPos();
 
             if (positions.contains(pos))
                 continue;
 
             String monster = null;
 
-            if (spawner.getLogic().spawnEntry != null && spawner.getLogic().spawnEntry.getNbt().get("id") != null)
-                monster = spawner.getLogic().spawnEntry.getNbt().get("id").toString();
+            if (spawner.getSpawner().nextSpawnData != null && spawner.getSpawner().nextSpawnData.getEntityToSpawn().get("id") != null)
+                monster = spawner.getSpawner().nextSpawnData.getEntityToSpawn().get("id").toString();
 
             if (monster != null) {
                 positions.add(pos);
@@ -322,8 +322,8 @@ public class SpawnerEsp extends Module {
         synchronized (foundSpawners) {
             for (FoundSpawner spawner : foundSpawners) {
                 BlockPos playerPos = new BlockPos(mc.player.getBlockX(), spawner.pos.getY(), mc.player.getBlockZ());
-                if (playerPos.isWithinDistance(spawner.pos, renderDistance.get() * 16)) {
-                    event.renderer.box(new Box(spawner.pos), getSideColor(spawner.spawnerType()),
+                if (playerPos.closerThan(spawner.pos, renderDistance.get() * 16)) {
+                    event.renderer.box(new AABB(spawner.pos), getSideColor(spawner.spawnerType()),
                             getLineColor(spawner.spawnerType()), shapeMode.get(), 0);
                 }
             }
@@ -336,9 +336,9 @@ public class SpawnerEsp extends Module {
 
         if (displaycoords.get()) {
             ChatUtils.sendMsg(
-                    Text.of("Found " + name + " spawner at " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
+                    Component.nullToEmpty("Found " + name + " spawner at " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ()));
         } else {
-            ChatUtils.sendMsg(Text.of("Found " + name + " spawner"));
+            ChatUtils.sendMsg(Component.nullToEmpty("Found " + name + " spawner"));
         }
     }
 

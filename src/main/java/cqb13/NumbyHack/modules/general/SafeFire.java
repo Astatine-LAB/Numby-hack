@@ -7,10 +7,10 @@ import meteordevelopment.meteorclient.settings.Setting;
 import meteordevelopment.meteorclient.settings.SettingGroup;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.FireBlock;
-import net.minecraft.block.SoulFireBlock;
-import net.minecraft.util.shape.VoxelShapes;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.FireBlock;
+import net.minecraft.world.level.block.SoulFireBlock;
+import net.minecraft.world.phys.shapes.Shapes;
 
 /**
  * modified by cqb13
@@ -57,23 +57,23 @@ public class SafeFire extends Module {
     @EventHandler
     public void onCollisionShape(CollisionShapeEvent event) {
         if (event.state.getBlock() instanceof FireBlock && fire.get()) {
-            event.shape = VoxelShapes.fullCube();
+            event.shape = Shapes.block();
         }
 
         if (event.state.getBlock() instanceof SoulFireBlock && soulFire.get()) {
-            event.shape = VoxelShapes.fullCube();
+            event.shape = Shapes.block();
         }
 
         if (event.state.getBlock() == Blocks.CAMPFIRE && campfire.get()) {
-            event.shape = VoxelShapes.fullCube();
+            event.shape = Shapes.block();
         }
 
         if (event.state.getBlock() == Blocks.SOUL_CAMPFIRE && soulCampfire.get()) {
-            event.shape = VoxelShapes.fullCube();
+            event.shape = Shapes.block();
         }
 
         if (event.state.getBlock() == Blocks.LAVA && lava.get()) {
-            event.shape = VoxelShapes.fullCube();
+            event.shape = Shapes.block();
         }
     }
 }

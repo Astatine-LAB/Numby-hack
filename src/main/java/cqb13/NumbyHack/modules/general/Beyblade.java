@@ -14,11 +14,11 @@ import meteordevelopment.meteorclient.systems.modules.combat.Quiver;
 import meteordevelopment.meteorclient.systems.modules.player.EXPThrower;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.item.BowItem;
-import net.minecraft.item.EnderPearlItem;
-import net.minecraft.item.ExperienceBottleItem;
-import net.minecraft.item.Items;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.item.BowItem;
+import net.minecraft.world.item.EnderpearlItem;
+import net.minecraft.world.item.ExperienceBottleItem;
+import net.minecraft.world.item.Items;
 
 /**
  * FloRida from venomhack
@@ -107,28 +107,28 @@ public class Beyblade extends Module {
             case All -> {
                 if (Modules.get().isActive(EXPThrower.class) ||
                         Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.combat.BedAura.class) ||
-                        mc.player.getMainHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getOffHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getMainHandStack().getItem() instanceof EnderPearlItem ||
-                        mc.player.getOffHandStack().getItem() instanceof EnderPearlItem ||
-                        mc.player.getMainHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getOffHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getMainHandStack().getItem() instanceof BowItem ||
-                        mc.player.getOffHandStack().getItem() instanceof BowItem ||
-                        mc.player.getEquippedStack(EquipmentSlot.CHEST).getItem() == Items.ELYTRA)
+                        mc.player.getMainHandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getOffhandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getMainHandItem().getItem() instanceof EnderpearlItem ||
+                        mc.player.getOffhandItem().getItem() instanceof EnderpearlItem ||
+                        mc.player.getMainHandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getOffhandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getMainHandItem().getItem() instanceof BowItem ||
+                        mc.player.getOffhandItem().getItem() instanceof BowItem ||
+                        mc.player.getItemBySlot(EquipmentSlot.CHEST).getItem() == Items.ELYTRA)
                     return;
             }
             case ExceptElytra -> {
                 if (Modules.get().isActive(EXPThrower.class) ||
                         Modules.get().isActive(meteordevelopment.meteorclient.systems.modules.combat.BedAura.class) ||
-                        mc.player.getMainHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getOffHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getMainHandStack().getItem() instanceof EnderPearlItem ||
-                        mc.player.getOffHandStack().getItem() instanceof EnderPearlItem ||
-                        mc.player.getMainHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getOffHandStack().getItem() instanceof ExperienceBottleItem ||
-                        mc.player.getMainHandStack().getItem() instanceof BowItem ||
-                        mc.player.getOffHandStack().getItem() instanceof BowItem)
+                        mc.player.getMainHandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getOffhandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getMainHandItem().getItem() instanceof EnderpearlItem ||
+                        mc.player.getOffhandItem().getItem() instanceof EnderpearlItem ||
+                        mc.player.getMainHandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getOffhandItem().getItem() instanceof ExperienceBottleItem ||
+                        mc.player.getMainHandItem().getItem() instanceof BowItem ||
+                        mc.player.getOffhandItem().getItem() instanceof BowItem)
                     return;
             }
             case None -> {
@@ -150,7 +150,7 @@ public class Beyblade extends Module {
                 count = 0;
         }
 
-        Rotations.rotate(yaw.get() ? yCount : mc.player.getYaw(), yaw.get() ? pCount : mc.player.getPitch());
+        Rotations.rotate(yaw.get() ? yCount : mc.player.getYRot(), yaw.get() ? pCount : mc.player.getXRot());
     }
 
     private void floRida() {

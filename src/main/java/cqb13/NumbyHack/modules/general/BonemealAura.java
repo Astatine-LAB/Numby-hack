@@ -16,20 +16,20 @@ import meteordevelopment.meteorclient.utils.player.InvUtils;
 import meteordevelopment.meteorclient.utils.player.Rotations;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.block.AzaleaBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.CocoaBlock;
-import net.minecraft.block.CropBlock;
-import net.minecraft.block.MushroomPlantBlock;
-import net.minecraft.block.SaplingBlock;
-import net.minecraft.block.StemBlock;
-import net.minecraft.block.SweetBerryBushBlock;
-import net.minecraft.item.Items;
-import net.minecraft.network.packet.c2s.play.PlayerInteractBlockC2SPacket;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.protocol.game.ServerboundUseItemOnPacket;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.AzaleaBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.CocoaBlock;
+import net.minecraft.world.level.block.CropBlock;
+import net.minecraft.world.level.block.MushroomBlock;
+import net.minecraft.world.level.block.SaplingBlock;
+import net.minecraft.world.level.block.StemBlock;
+import net.minecraft.world.level.block.SweetBerryBushBlock;
+import net.minecraft.world.phys.BlockHitResult;
 
 public class BonemealAura extends Module {
     private final SettingGroup sgGeneral = settings.getDefaultGroup();
@@ -92,9 +92,9 @@ public class BonemealAura extends Module {
         isBonemealing = true;
         Rotations.rotate(Rotations.getYaw(crop), Rotations.getPitch(crop), () -> {
             InvUtils.swap(bonemeal.slot(), false);
-            mc.player.networkHandler.sendPacket(new PlayerInteractBlockC2SPacket(Hand.MAIN_HAND,
+            mc.player.connection.send(new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND,
                     new BlockHitResult(Utils.vec3d(crop), Direction.UP, crop, false), 0));
-            mc.player.swingHand(Hand.MAIN_HAND);
+            mc.player.swing(InteractionHand.MAIN_HAND);
         });
     }
 
@@ -102,28 +102,28 @@ public class BonemealAura extends Module {
         for (int x = -horizontalRange.get(); x < horizontalRange.get(); x++) {
             for (int y = -verticalRange.get(); y < verticalRange.get(); y++) {
                 for (int z = -horizontalRange.get(); z < horizontalRange.get(); z++) {
-                    BlockPos blockPos = mc.player.getBlockPos().add(x, y, z);
-                    Block block = mc.world.getBlockState(blockPos).getBlock();
+                    BlockPos blockPos = mc.player.blockPosition().offset(x, y, z);
+                    Block block = mc.level.getBlockState(blockPos).getBlock();
                     if (block instanceof CropBlock cropBlock) {
-                        int age = cropBlock.getAge(mc.world.getBlockState(blockPos));
+                        int age = cropBlock.getAge(mc.level.getBlockState(blockPos));
                         if (age < cropBlock.getMaxAge())
                             return blockPos;
                     }
                     if (block instanceof CocoaBlock) {
-                        int age = mc.world.getBlockState(blockPos).get(CocoaBlock.AGE);
+                        int age = mc.level.getBlockState(blockPos).getValue(CocoaBlock.AGE);
                         if (age < 2)
                             return blockPos;
                     }
                     if (block instanceof StemBlock) {
-                        int age = mc.world.getBlockState(blockPos).get(StemBlock.AGE);
+                        int age = mc.level.getBlockState(blockPos).getValue(StemBlock.AGE);
                         if (age < StemBlock.MAX_AGE)
                             return blockPos;
                     }
-                    if (block instanceof MushroomPlantBlock) {
+                    if (block instanceof MushroomBlock) {
                         return blockPos;
                     }
                     if (block instanceof SweetBerryBushBlock) {
-                        int age = mc.world.getBlockState(blockPos).get(SweetBerryBushBlock.AGE);
+                        int age = mc.level.getBlockState(blockPos).getValue(SweetBerryBushBlock.AGE);
                         if (age < 3)
                             return blockPos;
                     }

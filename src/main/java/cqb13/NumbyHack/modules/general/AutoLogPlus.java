@@ -18,11 +18,11 @@ import meteordevelopment.meteorclient.systems.modules.misc.AutoReconnect;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.world.Dimension;
 import meteordevelopment.orbit.EventHandler;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.network.packet.s2c.common.DisconnectS2CPacket;
-import net.minecraft.text.Text;
+import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.common.ClientboundDisconnectPacket;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * made by cqb13
@@ -180,7 +180,7 @@ public class AutoLogPlus extends Module {
 
     @EventHandler
     private void onTick(TickEvent.Post event) {
-        if (mc == null || mc.world == null || mc.player == null)
+        if (mc == null || mc.level == null || mc.player == null)
             return;
 
         if (onlyTrusted.get()) {
@@ -210,9 +210,9 @@ public class AutoLogPlus extends Module {
 
     // bad player log
     private void playerLog() {
-        for (Entity entity : mc.world.getEntities()) {
-            if (entity instanceof PlayerEntity && entity.getUuid() != mc.player.getUuid()) {
-                if (entity != mc.player && !Friends.get().isFriend((PlayerEntity) entity)) {
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof Player && entity.getUUID() != mc.player.getUUID()) {
+                if (entity != mc.player && !Friends.get().isFriend((Player) entity)) {
                     disconnect("A non trusted player [" + entity.getName().getString()
                             + "] has entered your render distance.");
                 }
@@ -222,7 +222,7 @@ public class AutoLogPlus extends Module {
     }
 
     private void hungerLog() {
-        if (mc.player.getHungerManager().getFoodLevel() < hungerThreshold.get()) {
+        if (mc.player.getFoodData().getFoodLevel() < hungerThreshold.get()) {
             disconnect("Your hunger level fell bellow " + hungerThreshold.get());
         }
     }
@@ -264,9 +264,9 @@ public class AutoLogPlus extends Module {
     }
 
     private void highPingCheck() {
-        if (mc.getNetworkHandler() == null || mc.player == null)
+        if (mc.getConnection() == null || mc.player == null)
             return;
-        PlayerListEntry playerListEntry = mc.getNetworkHandler().getPlayerListEntry(mc.player.getUuid());
+        PlayerInfo playerListEntry = mc.getConnection().getPlayerInfo(mc.player.getUUID());
 
         int ping = playerListEntry.getLatency();
 
@@ -283,9 +283,9 @@ public class AutoLogPlus extends Module {
     }
 
     private void disconnect(String text) {
-        if (mc.getNetworkHandler() == null)
+        if (mc.getConnection() == null)
             return;
-        mc.player.networkHandler.onDisconnect(new DisconnectS2CPacket(Text.of("[Auto Log+] " + text)));
+        mc.player.connection.handleDisconnect(new ClientboundDisconnectPacket(Component.nullToEmpty("[Auto Log+] " + text)));
 
         if (toggleOff.get())
             toggle();

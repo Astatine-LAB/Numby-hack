@@ -15,14 +15,13 @@ import meteordevelopment.meteorclient.systems.hud.HudGroup;
 import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Modules;
 import meteordevelopment.meteorclient.utils.misc.MeteorStarscript;
+import net.minecraft.world.item.Items;
 import org.meteordev.starscript.value.Value;
 import org.meteordev.starscript.value.ValueMap;
-
-import net.minecraft.item.Items;
 import org.slf4j.Logger;
 
 public class NumbyHack extends MeteorAddon {
-    public static final Category CATEGORY = new Category("Numby Hack", Items.TURTLE_HELMET.getDefaultStack());
+    public static final Category CATEGORY = new Category("Numby Hack", Items.TURTLE_HELMET.getDefaultInstance());
     public static final HudGroup HUD_GROUP = new HudGroup("Numby Hack");
     public static final Logger LOGGER = LogUtils.getLogger();
 

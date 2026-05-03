@@ -24,8 +24,8 @@ import meteordevelopment.meteorclient.utils.entity.EntityUtils;
 import meteordevelopment.meteorclient.utils.player.PlayerUtils;
 import meteordevelopment.meteorclient.utils.render.color.Color;
 import meteordevelopment.meteorclient.utils.render.color.SettingColor;
-import net.minecraft.client.network.AbstractClientPlayerEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.client.player.AbstractClientPlayer;
+import net.minecraft.world.entity.player.Player;
 
 public class TextRadarHud extends HudElement {
     public static final HudElementInfo<TextRadarHud> INFO = new HudElementInfo<>(NumbyHack.HUD_GROUP, "text-radar",
@@ -135,7 +135,7 @@ public class TextRadarHud extends HudElement {
             .defaultValue(new SettingColor(25, 25, 25, 50))
             .build());
 
-    private final List<AbstractClientPlayerEntity> players = new ArrayList<>();
+    private final List<AbstractClientPlayer> players = new ArrayList<>();
 
     public TextRadarHud() {
         super(INFO);
@@ -158,19 +158,19 @@ public class TextRadarHud extends HudElement {
 
     @Override
     public void tick(HudRenderer renderer) {
-        if (mc.world == null) {
+        if (mc.level == null) {
             return;
         }
         getPlayers();
         double width = renderer.textWidth("Players:", shadow.get(), getScale());
         double height = renderer.textHeight(shadow.get(), getScale());
 
-        if (mc.world == null) {
+        if (mc.level == null) {
             setSize(width, height);
             return;
         }
 
-        for (PlayerEntity entity : players) {
+        for (Player entity : players) {
             if (entity.equals(mc.player))
                 continue;
             if (!friends.get() && Friends.get().isFriend(entity))
@@ -198,7 +198,7 @@ public class TextRadarHud extends HudElement {
             return;
         }
 
-        if (mc.world == null) {
+        if (mc.level == null) {
             return;
         }
 
@@ -212,7 +212,7 @@ public class TextRadarHud extends HudElement {
                 x + border.get() + alignX(renderer.textWidth("Players:", shadow.get(), getScale()), alignment.get()), y,
                 secondaryColor.get(), shadow.get(), getScale());
 
-        for (PlayerEntity entity : players) {
+        for (Player entity : players) {
             if (entity.equals(mc.player))
                 continue;
             if (!friends.get() && Friends.get().isFriend(entity))
@@ -273,15 +273,15 @@ public class TextRadarHud extends HudElement {
         }
     }
 
-    private List<AbstractClientPlayerEntity> getPlayers() {
-        assert mc.world != null;
+    private List<AbstractClientPlayer> getPlayers() {
+        assert mc.level != null;
         players.clear();
-        players.addAll(mc.world.getPlayers());
+        players.addAll(mc.level.players());
         players.remove(mc.player);
         if (players.size() > limit.get()) {
             players.subList(limit.get() - 1, players.size() - 1).clear();
         }
-        players.sort(Comparator.comparingDouble(e -> e.squaredDistanceTo(mc.getCameraEntity())));
+        players.sort(Comparator.comparingDouble(e -> e.distanceToSqr(mc.getCameraEntity())));
 
         return players;
     }

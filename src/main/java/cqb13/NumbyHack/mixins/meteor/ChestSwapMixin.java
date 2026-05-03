@@ -15,11 +15,11 @@ import meteordevelopment.meteorclient.systems.modules.Category;
 import meteordevelopment.meteorclient.systems.modules.Module;
 import meteordevelopment.meteorclient.systems.modules.player.ChestSwap;
 import meteordevelopment.meteorclient.systems.modules.player.ChestSwap.Chestplate;
-import net.minecraft.component.DataComponentTypes;
-import net.minecraft.enchantment.Enchantments;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
+import net.minecraft.core.component.DataComponents;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.enchantment.Enchantments;
 
 @Mixin(value = ChestSwap.class, remap = false)
 public abstract class ChestSwapMixin extends Module {
@@ -60,8 +60,8 @@ public abstract class ChestSwapMixin extends Module {
         int bestScore = -1;
         boolean foundPreferred = false;
 
-        for (int i = 0; i < mc.player.getInventory().getMainStacks().size(); i++) {
-            ItemStack itemStack = mc.player.getInventory().getMainStacks().get(i);
+        for (int i = 0; i < mc.player.getInventory().getNonEquipmentItems().size(); i++) {
+            ItemStack itemStack = mc.player.getInventory().getNonEquipmentItems().get(i);
             Item item = itemStack.getItem();
 
             if (!(item == Items.DIAMOND_CHESTPLATE || item == Items.NETHERITE_CHESTPLATE)) {
@@ -174,10 +174,10 @@ public abstract class ChestSwapMixin extends Module {
         int bestSlot = -1;
         int bestScore = -1;
 
-        for (int i = 0; i < mc.player.getInventory().getMainStacks().size(); i++) {
-            ItemStack item = mc.player.getInventory().getMainStacks().get(i);
+        for (int i = 0; i < mc.player.getInventory().getNonEquipmentItems().size(); i++) {
+            ItemStack item = mc.player.getInventory().getNonEquipmentItems().get(i);
 
-            if (!item.contains(DataComponentTypes.GLIDER)) {
+            if (!item.has(DataComponents.GLIDER)) {
                 continue;
             }
 
