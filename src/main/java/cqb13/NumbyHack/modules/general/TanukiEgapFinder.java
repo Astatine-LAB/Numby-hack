@@ -21,12 +21,14 @@ import meteordevelopment.meteorclient.utils.Utils;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import meteordevelopment.orbit.EventHandler;
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.ChestBlockEntity;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
 
 /**
  * Original from Tanuki:
@@ -388,12 +390,12 @@ public class TanukiEgapFinder extends Module {
     }
 
     private Long getWorldSeed() {
-        if (mc.getSingleplayerServer() != null) {
-            var worldProperties = mc.getSingleplayerServer().getWorldData();
-            if (worldProperties != null) {
-                return worldProperties.worldGenOptions().seed();
-            }
+        IntegratedServer server = mc.getSingleplayerServer();
+        if (server == null) {
+            return null;
         }
-        return null;
+
+        WorldGenSettings settings = server.overworld().getDataStorage().get(WorldGenSettings.TYPE);
+        return settings != null ? settings.options().seed() : null;
     }
 }

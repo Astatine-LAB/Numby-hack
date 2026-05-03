@@ -87,7 +87,7 @@ public class ChunkBorders extends Module {
         if (mc.level == null || mc.player == null)
             return;
 
-        ChunkPos center = new ChunkPos(mc.player.blockPosition());
+        ChunkPos center = ChunkPos.containing(mc.player.blockPosition());
         int r = range.get();
 
         double y;
@@ -114,8 +114,8 @@ public class ChunkBorders extends Module {
         for (int dx = -r; dx <= r; dx++) {
             for (int dz = -r; dz <= r; dz++) {
                 ChunkPos chunk = new ChunkPos(
-                        center.x + dx,
-                        center.z + dz);
+                        center.x() + dx,
+                        center.z() + dz);
 
                 int startX = chunk.getMinBlockX();
                 int startZ = chunk.getMinBlockZ();

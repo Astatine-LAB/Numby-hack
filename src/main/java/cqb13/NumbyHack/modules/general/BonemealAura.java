@@ -93,7 +93,7 @@ public class BonemealAura extends Module {
         Rotations.rotate(Rotations.getYaw(crop), Rotations.getPitch(crop), () -> {
             InvUtils.swap(bonemeal.slot(), false);
             mc.player.connection.send(new ServerboundUseItemOnPacket(InteractionHand.MAIN_HAND,
-                    new BlockHitResult(Utils.vec3d(crop), Direction.UP, crop, false), 0));
+                    new BlockHitResult(Utils.vec3(crop), Direction.UP, crop, false), 0));
             mc.player.swing(InteractionHand.MAIN_HAND);
         });
     }

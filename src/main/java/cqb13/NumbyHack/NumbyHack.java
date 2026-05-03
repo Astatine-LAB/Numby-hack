@@ -21,7 +21,7 @@ import org.meteordev.starscript.value.ValueMap;
 import org.slf4j.Logger;
 
 public class NumbyHack extends MeteorAddon {
-    public static final Category CATEGORY = new Category("Numby Hack", Items.TURTLE_HELMET.getDefaultInstance());
+    public static final Category CATEGORY = new Category("Numby Hack", Items.TURTLE_HELMET::getDefaultInstance);
     public static final HudGroup HUD_GROUP = new HudGroup("Numby Hack");
     public static final Logger LOGGER = LogUtils.getLogger();
 
@@ -52,9 +52,7 @@ public class NumbyHack extends MeteorAddon {
         modules.add(new ChunkBorders());
         modules.add(new ConditionToggle());
         modules.add(new Confetti());
-        modules.add(new LogOutSpots());
         modules.add(new MapArtTracker());
-        modules.add(new NewChunks());
         modules.add(new NoStrip());
         modules.add(new Number81());
         modules.add(new PacketDelay());

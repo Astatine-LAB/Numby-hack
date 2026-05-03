@@ -36,9 +36,7 @@ Chat Encryption       || Encrypts messages using a user-provided key
 Chunk Borders         || Customizable chunk border rendering
 Condition Toggle      || Toggles modules based on conditions
 Confetti              || Changes the color of totem pop particles
-Log Out Spots         || Shows where a player has logged out
 Map Art Tracker       || Track and highlights map arts
-New Chunks            || Finds new chunks based on flowing liquids
 No Strip              || Prevents you from stripping logs
 Number81              || Counts to 81 in chat
 Numby Chat            || Improves your chat experience in various ways
