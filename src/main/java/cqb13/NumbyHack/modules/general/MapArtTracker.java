@@ -253,6 +253,19 @@ public class MapArtTracker extends Module {
                 continue;
             }
 
+            if (!highlightFound.get()) {
+                int mapId = getMapId(stack);
+                if (mapId < 0) {
+                    continue;
+                }
+
+                MapRecord rec = maps.get(mapId);
+
+                if (rec != null && rec.collected) {
+                    continue;
+                }
+            }
+
             String name = stack.getHoverName().getString();
 
             Vector3d vec3 = new Vector3d(entity.getX(), entity.getY(), entity.getZ());
