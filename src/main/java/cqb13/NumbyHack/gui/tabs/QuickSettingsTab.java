@@ -6,10 +6,14 @@ import meteordevelopment.meteorclient.gui.GuiTheme;
 import meteordevelopment.meteorclient.gui.tabs.Tab;
 import meteordevelopment.meteorclient.gui.tabs.TabScreen;
 import meteordevelopment.meteorclient.gui.tabs.WindowTabScreen;
+import meteordevelopment.meteorclient.gui.widgets.WLabel;
+import meteordevelopment.meteorclient.gui.widgets.WWidget;
+import meteordevelopment.meteorclient.gui.widgets.containers.WHorizontalList;
 import meteordevelopment.meteorclient.gui.widgets.containers.WVerticalList;
 import meteordevelopment.meteorclient.gui.widgets.pressable.WButton;
 import meteordevelopment.meteorclient.utils.player.ChatUtils;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.world.entity.player.ChatVisiblity;
 
 public class QuickSettingsTab extends Tab {
     public QuickSettingsTab() {
@@ -33,7 +37,7 @@ public class QuickSettingsTab extends Tab {
 
         @Override
         public void initWidgets() {
-            add(theme.label("Quick Settings")).expandX().centerX();
+            add(theme.label("Quick Settings", true)).expandX().centerX();
             add(theme.horizontalSeparator()).expandX();
 
             WVerticalList list = theme.verticalList();
@@ -65,6 +69,30 @@ public class QuickSettingsTab extends Tab {
             advancedItemTooltipsToggle.action = () -> {
                 toggleAdvancedTooltips(!mc.options.advancedItemTooltips);
             };
+
+            WVerticalList chatStyle = theme.verticalList();
+            chatStyle.add(theme.label("Chat Style", false)).expandX().centerX().widget();
+
+            WHorizontalList chatStyleButtons = theme.horizontalList();
+
+            WButton setChatToNormal = theme.button("Normal");
+            setChatToNormal.action = () -> setChatToNormal();
+
+            WButton setChatToCmdOnly = theme.button("Command");
+            setChatToCmdOnly.action = () -> setChatToCmdOnly();
+
+            WButton setChatToHidden = theme.button("Hidden");
+            setChatToHidden.action = () -> setChatToHidden();
+
+            chatStyle.add(chatStyleButtons);
+
+            double maxWidth = maxWidgetWidth(setChatToNormal, setChatToCmdOnly, setChatToHidden);
+
+            chatStyleButtons.add(setChatToNormal).minWidth(maxWidth + 5).widget();
+            chatStyleButtons.add(setChatToCmdOnly).minWidth(maxWidth + 5).widget();
+            chatStyleButtons.add(setChatToHidden).minWidth(maxWidth + 5).widget();
+
+            list.add(chatStyle);
 
             add(list);
         }
@@ -100,7 +128,35 @@ public class QuickSettingsTab extends Tab {
         sendChatInfo("Advanced Tooltips", b ? "enabled" : "disabled");
     }
 
+    private static void setChatToNormal() {
+        mc.options.chatVisibility().set(ChatVisiblity.FULL);
+        sendChatInfo("Chat", "shown");
+    }
+
+    private static void setChatToCmdOnly() {
+        mc.options.chatVisibility().set(ChatVisiblity.SYSTEM);
+        sendChatInfo("Chat", "command only");
+    }
+
+    private static void setChatToHidden() {
+        mc.options.chatVisibility().set(ChatVisiblity.HIDDEN);
+        sendChatInfo("Chat", "hidden");
+    }
+
     private static void sendChatInfo(String setting, String value) {
         ChatUtils.info("Set %s to %s.", setting, value);
+    }
+
+    private static double maxWidgetWidth(WWidget... widgets) {
+        double max = 0;
+
+        for (WWidget widget : widgets) {
+            widget.calculateSize();
+            if (widget != null && widget.width > max) {
+                max = widget.width;
+            }
+        }
+
+        return max;
     }
 }
