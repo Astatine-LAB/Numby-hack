@@ -161,7 +161,7 @@ public class BundleCopy extends Module {
     private void buildQueue() {
         final ItemStack[] slots = new ItemStack[HOTBAR_END + 1];
         for (int i = 0; i <= HOTBAR_END; ++i) {
-            slots[i] = mc.player.getInventory().getItem(i);
+            slots[i] = mc.player.containerMenu.getSlot(i).getItem();
         }
 
         // Count empty maps in grid
@@ -465,11 +465,16 @@ public class BundleCopy extends Module {
                         if (LAST_EMPTY_SLOT >= f.hotbarStart) {
                             clicks.add(new InvAction(f.inputStart, LAST_EMPTY_SLOT - f.hotbarStart,
                                     InvAction.ActionType.HOTBAR_SWAP));
-
+                            ItemStack temp = slots[f.inputStart];
+                            slots[f.inputStart] = slots[LAST_EMPTY_SLOT];
+                            slots[LAST_EMPTY_SLOT] = temp;
                         } else {
                             clicks.add(new InvAction(LAST_EMPTY_SLOT, 0, InvAction.ActionType.CLICK));
                             clicks.add(new InvAction(f.inputStart, 0, InvAction.ActionType.CLICK));
+                            slots[f.inputStart] = slots[LAST_EMPTY_SLOT];
+                            slots[LAST_EMPTY_SLOT] = ItemStack.EMPTY;
                         }
+                        LAST_EMPTY_SLOT = lastEmptySlot(slots, f.hotbarEnd, f.inventoryStart);
                     }
 
                     if (LAST_EMPTY_SLOT != -1

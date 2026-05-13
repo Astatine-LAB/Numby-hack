@@ -3,6 +3,7 @@ package cqb13.NumbyHack;
 import com.mojang.logging.LogUtils;
 import cqb13.NumbyHack.modules.commands.*;
 import cqb13.NumbyHack.modules.general.*;
+import cqb13.NumbyHack.modules.general.BundleCopy.BundleCopy;
 import cqb13.NumbyHack.modules.hud.*;
 import cqb13.NumbyHack.utils.*;
 import cqb13.NumbyHack.gui.tabs.*;
