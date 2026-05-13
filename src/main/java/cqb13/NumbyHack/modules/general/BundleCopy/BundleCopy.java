@@ -1,4 +1,4 @@
-package cqb13.NumbyHack.modules.general;
+package cqb13.NumbyHack.modules.general.BundleCopy;
 
 import static org.lwjgl.glfw.GLFW.GLFW_KEY_C;
 
@@ -62,22 +62,6 @@ public class BundleCopy extends Module {
 
     private static final int HOTBAR_END = 44;
 
-    private enum ActionType {
-        CLICK, SHIFT_CLICK, HOTBAR_SWAP, BUNDLE_SELECT
-    }
-
-    private static final class InvAction {
-        final int slot;
-        final int button;
-        final ActionType type;
-
-        InvAction(int slot, int button, ActionType type) {
-            this.slot = slot;
-            this.button = button;
-            this.type = type;
-        }
-    }
-
     private final ArrayDeque<InvAction> clickQueue = new ArrayDeque<>();
     private boolean processing = false;
     private int ticksWaited = 0;
@@ -90,20 +74,8 @@ public class BundleCopy extends Module {
                 "Copies maps in bundles, have 2 empty bundles and a bundle with maps in your inventory then press the copy key.");
     }
 
-    private static final class ConstFields {
-        final int RESULT, INPUT_START, INV_START, HOTBAR_START, HOTBAR_END;
-
-        ConstFields(int RESULT, int INPUT_START, int INPUT_END, int INV_START, int INV_END, int HOTBAR_START,
-                int HOTBAR_END) {
-            this.RESULT = RESULT;
-            this.INPUT_START = INPUT_START;
-            this.INV_START = INV_START;
-            this.HOTBAR_START = HOTBAR_START;
-            this.HOTBAR_END = HOTBAR_END;
-        }
-    }
-
-    private final ConstFields INV = new ConstFields(0, 1, 5, 9, 36, 36, 45);
+    private static final InventoryLayout LAYOUT = new InventoryLayout(0, 1, 9, 36, 45);
+    private static final int MAP_INPUT_SLOT = LAYOUT.inputStart + 1;
 
     @Override
     public void onActivate() {
@@ -194,13 +166,13 @@ public class BundleCopy extends Module {
 
         // Count empty maps in grid
         int numEmptyMapsInGrid = 0;
-        ItemStack in = slots[INV.INPUT_START + 1];
+        ItemStack in = slots[MAP_INPUT_SLOT];
         if (!in.isEmpty() && in.getItem() == Items.MAP) {
             numEmptyMapsInGrid = in.getCount();
         }
 
         int lastEmptyMapSlot = -1;
-        for (int i = HOTBAR_END; i >= INV.INV_START; --i) {
+        for (int i = HOTBAR_END; i >= LAYOUT.inventoryStart; --i) {
             if (slots[i].getItem() == Items.MAP) {
                 lastEmptyMapSlot = i;
                 break;
@@ -212,23 +184,18 @@ public class BundleCopy extends Module {
             return;
         }
 
-        final int totalEmptyMaps = IntStream.rangeClosed(INV.INV_START, lastEmptyMapSlot)
+        final int totalEmptyMaps = IntStream.rangeClosed(LAYOUT.inventoryStart, lastEmptyMapSlot)
                 .filter(i -> slots[i].getItem() == Items.MAP).map(i -> slots[i].getCount()).sum();
 
         ArrayDeque<InvAction> clicks = new ArrayDeque<>();
-        copyMapArtInBundles(clicks, slots, INV, numEmptyMapsInGrid, totalEmptyMaps);
+        copyMapArtInBundles(clicks, slots, LAYOUT, numEmptyMapsInGrid, totalEmptyMaps);
+
         if (clicks.isEmpty()) {
             error("Nothing to copy");
             return;
         }
 
         clickQueue.addAll(clicks);
-
-        if (clickQueue.isEmpty()) {
-            error("Nothing to copy");
-            return;
-        }
-
         processing = true;
         info("Copying maps...");
     }
@@ -257,41 +224,41 @@ public class BundleCopy extends Module {
         }
     }
 
-    private final int getEmptyMapsIntoInput(final ArrayDeque<InvAction> clicks, final ItemStack[] slots,
-            final ConstFields f, final int amtNeeded, int amtInGrid, final int dontLeaveEmptySlotsAfterThisSlot) {
-        for (int j = f.INV_START; j < f.HOTBAR_END && amtInGrid < amtNeeded; ++j) {
-            if (slots[j].getItem() != Items.MAP) {
+    private int getEmptyMapsIntoInput(final ArrayDeque<InvAction> clicks, final ItemStack[] slots,
+            final InventoryLayout f, final int amtNeeded, int amtInGrid, final int dontLeaveEmptySlotsAfterThisSlot) {
+        for (int slot = f.inventoryStart; slot < f.hotbarEnd && amtInGrid < amtNeeded; ++slot) {
+            if (slots[slot].getItem() != Items.MAP) {
                 continue;
             }
 
-            final boolean leaveOne = j > dontLeaveEmptySlotsAfterThisSlot;
-            if (leaveOne && slots[j].getCount() == 1) {
+            final boolean leaveOne = slot > dontLeaveEmptySlotsAfterThisSlot;
+            if (leaveOne && slots[slot].getCount() == 1) {
                 continue;
             }
 
-            final int combinedCnt = slots[j].getCount() + amtInGrid;
-            final int combinedHalfCnt = (slots[j].getCount() + 1) / 2 + amtInGrid;
+            final int combinedCnt = slots[slot].getCount() + amtInGrid;
+            final int combinedHalfCnt = (slots[slot].getCount() + 1) / 2 + amtInGrid;
 
-            if (j >= f.HOTBAR_START && (!leaveOne || amtInGrid > 0) && slots[j].getCount() >= amtNeeded) {
-                clicks.add(new InvAction(f.INPUT_START + 1, j - f.HOTBAR_START, ActionType.HOTBAR_SWAP));
-                amtInGrid = slots[j].getCount();
-                slots[j].setCount(combinedCnt - amtInGrid);
+            if (slot >= f.hotbarStart && (!leaveOne || amtInGrid > 0) && slots[slot].getCount() >= amtNeeded) {
+                clicks.add(new InvAction(f.inputStart + 1, slot - f.hotbarStart, InvAction.ActionType.HOTBAR_SWAP));
+                amtInGrid = slots[slot].getCount();
+                slots[slot].setCount(combinedCnt - amtInGrid);
                 break;
             } else if (combinedCnt <= 64) {
-                clicks.add(new InvAction(j, 0, ActionType.CLICK));
-                clicks.add(new InvAction(f.INPUT_START + 1, 0, ActionType.CLICK));
-                slots[j] = ItemStack.EMPTY;
+                clicks.add(new InvAction(slot, 0, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(f.inputStart + 1, 0, InvAction.ActionType.CLICK));
+                slots[slot] = ItemStack.EMPTY;
                 amtInGrid = combinedCnt;
-            } else if (slots[j].getCount() > 1 && combinedHalfCnt >= amtNeeded && combinedHalfCnt <= 64) {
-                clicks.add(new InvAction(j, 1, ActionType.CLICK));
-                clicks.add(new InvAction(f.INPUT_START + 1, 0, ActionType.CLICK));
-                slots[j].setCount(slots[j].getCount() / 2);
+            } else if (slots[slot].getCount() > 1 && combinedHalfCnt >= amtNeeded && combinedHalfCnt <= 64) {
+                clicks.add(new InvAction(slot, 1, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(f.inputStart + 1, 0, InvAction.ActionType.CLICK));
+                slots[slot].setCount(slots[slot].getCount() / 2);
                 amtInGrid = combinedHalfCnt;
             } else {
-                clicks.add(new InvAction(j, 0, ActionType.CLICK));
-                clicks.add(new InvAction(f.INPUT_START + 1, 0, ActionType.CLICK));
-                clicks.add(new InvAction(j, 0, ActionType.CLICK));
-                slots[j].setCount(combinedCnt - 64);
+                clicks.add(new InvAction(slot, 0, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(f.inputStart + 1, 0, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(slot, 0, InvAction.ActionType.CLICK));
+                slots[slot].setCount(combinedCnt - 64);
                 amtInGrid = 64;
             }
         }
@@ -299,7 +266,7 @@ public class BundleCopy extends Module {
         return amtInGrid;
     }
 
-    private final int lastEmptySlot(ItemStack[] slots, final int END, final int START) {
+    private int lastEmptySlot(ItemStack[] slots, final int END, final int START) {
         for (int i = END - 1; i >= START; --i) {
             if (slots[i].isEmpty()) {
                 return i;
@@ -319,16 +286,8 @@ public class BundleCopy extends Module {
         return text == null ? null : text.getString();
     }
 
-    private record PrioAndSlot(int p, int slot) implements Comparable<PrioAndSlot> {
-        @Override
-        public int compareTo(PrioAndSlot o) {
-            return p != o.p ? p - o.p : slot - o.slot;
-        }
-    }
-
-    private void copyMapArtInBundles(final ArrayDeque<InvAction> clicks, final ItemStack[] slots, final ConstFields f,
-            int numEmptyMapsInGrid, final int totalEmptyMaps) {
-        final int[] slotsWithBundles = IntStream.range(f.INV_START, f.HOTBAR_END).filter(i -> {
+    private BundleScan scanBundles(ItemStack[] slots, InventoryLayout f) {
+        int[] bundleSlots = IntStream.range(f.inventoryStart, f.hotbarEnd).filter(i -> {
             BundleContents contents = slots[i].get(DataComponents.BUNDLE_CONTENTS);
             if (contents == null)
                 return false;
@@ -338,19 +297,19 @@ public class BundleCopy extends Module {
             }
             return true;
         }).toArray();
-        final BundleContents[] bundles = Arrays.stream(slotsWithBundles)
+
+        BundleContents[] contents = Arrays.stream(bundleSlots)
                 .mapToObj(i -> slots[i].get(DataComponents.BUNDLE_CONTENTS))
                 .toArray(BundleContents[]::new);
-        final int SRC_BUNDLES = (int) Arrays.stream(bundles).filter(Predicate.not(BundleContents::isEmpty))
-                .count();
-        final int USABLE_EMPTY_BUNDLES = bundles.length - SRC_BUNDLES - 1;
-        if (USABLE_EMPTY_BUNDLES <= 0) {
-            error("Could not find usable empty bundle");
-            return;
-        }
-        int LAST_EMPTY_SLOT = lastEmptySlot(slots, f.HOTBAR_END, f.INV_START);
-        final int DESTS_PER_SRC = SRC_BUNDLES > USABLE_EMPTY_BUNDLES ? 999 : USABLE_EMPTY_BUNDLES / SRC_BUNDLES;
 
+        int sourceCount = (int) Arrays.stream(contents).filter(Predicate.not(BundleContents::isEmpty)).count();
+        int usableEmptyCount = contents.length - sourceCount - 1;
+        return new BundleScan(bundleSlots, contents, sourceCount, usableEmptyCount);
+    }
+
+    private PlanResult planDestinations(ItemStack[] slots, InventoryLayout f,
+            int[] slotsWithBundles, BundleContents[] bundles,
+            int sourceCount, int usableEmptyCount, int destsPerSource) {
         TreeMap<Integer, List<Integer>> bundlesToCopy = new TreeMap<>();
         HashSet<Integer> usedDests = new HashSet<>();
         HashSet<Item> srcBundleTypes = new HashSet<>();
@@ -365,8 +324,8 @@ public class BundleCopy extends Module {
             ArrayList<Integer> copyDests = new ArrayList<>();
             final String name1 = getCustomNameOrNull(slots[s1]);
             if (name1 != null) {
-                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < USABLE_EMPTY_BUNDLES
-                        && copyDests.size() < DESTS_PER_SRC; ++j) {
+                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < usableEmptyCount
+                        && copyDests.size() < destsPerSource; ++j) {
                     if (bundles[j].isEmpty() && name1.equals(getCustomNameOrNull(slots[slotsWithBundles[j]]))
                             && usedDests.add(j)) {
                         copyDests.add(j);
@@ -375,8 +334,8 @@ public class BundleCopy extends Module {
             }
 
             if (copyDests.isEmpty() && slots[s1].getItem() != Items.BUNDLE) {
-                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < USABLE_EMPTY_BUNDLES
-                        && copyDests.size() < DESTS_PER_SRC; ++j) {
+                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < usableEmptyCount
+                        && copyDests.size() < destsPerSource; ++j) {
                     if (bundles[j].isEmpty() && slots[s1].getItem() == slots[slotsWithBundles[j]].getItem()
                             && (name1 == null || getCustomNameOrNull(slots[slotsWithBundles[j]]) == null)
                             && usedDests.add(j)) {
@@ -386,39 +345,40 @@ public class BundleCopy extends Module {
             }
 
             if (copyDests.isEmpty()) {
-                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < USABLE_EMPTY_BUNDLES
-                        && copyDests.size() < DESTS_PER_SRC; ++j) {
+                for (int j = 0; j < slotsWithBundles.length && usedDests.size() < usableEmptyCount
+                        && copyDests.size() < destsPerSource; ++j) {
                     final int s2 = slotsWithBundles[j];
-                    if (!bundles[j].isEmpty())
+                    if (!bundles[j].isEmpty()) {
                         continue;
+                    }
                     if (name1 != null && getCustomNameOrNull(slots[s2]) != null
-                            && !name1.equals(getCustomNameOrNull(slots[s2])))
+                            && !name1.equals(getCustomNameOrNull(slots[s2]))) {
                         continue;
-                    if (SRC_BUNDLES != USABLE_EMPTY_BUNDLES && slots[s1].getItem() != slots[s2].getItem())
+                    }
+                    if (sourceCount != usableEmptyCount && slots[s1].getItem() != slots[s2].getItem()) {
                         continue;
-                    if (!usedDests.add(j))
+                    }
+                    if (!usedDests.add(j)) {
                         continue;
+                    }
+
                     copyDests.add(j);
                 }
             }
 
             if (copyDests.isEmpty()) {
                 error("Could not determine destination bundles");
-                return;
+                return null;
             }
+
             for (int j : copyDests) {
                 dstBundleTypes.add(slots[slotsWithBundles[j]].getItem());
             }
+
             bundlesToCopy.put(i, copyDests);
         }
-        final int emptyMapsNeeded = bundlesToCopy.entrySet().stream()
-                .mapToInt(e -> getNumStored(bundles[e.getKey()].weight().getOrThrow()) * e.getValue().size()).sum();
-        if (totalEmptyMaps < emptyMapsNeeded) {
-            error("Insufficient empty maps");
-            return;
-        }
 
-        final int tempBundleSlot;
+        int tempBundleSlot;
         HashSet<Integer> unusedBundles = new HashSet<>();
         for (int i = 0; i < slotsWithBundles.length; ++i) {
             unusedBundles.add(i);
@@ -429,12 +389,12 @@ public class BundleCopy extends Module {
             unusedBundles.removeAll(e.getValue());
         }
 
-        final int[] unusedBundleSlots = unusedBundles.stream().mapToInt(i -> slotsWithBundles[i]).toArray();
-        final boolean anyUnnamedDst = bundlesToCopy.values().stream()
+        int[] unusedBundleSlots = unusedBundles.stream().mapToInt(i -> slotsWithBundles[i]).toArray();
+        boolean anyUnnamedDst = bundlesToCopy.values().stream()
                 .anyMatch(d -> d.stream()
                         .anyMatch(i -> slots[slotsWithBundles[i]].get(DataComponents.ITEM_NAME) == null));
 
-        final PrioAndSlot pas = Arrays.stream(unusedBundleSlots)
+        PrioAndSlot pas = Arrays.stream(unusedBundleSlots)
                 .mapToObj(i -> new PrioAndSlot(
                         ((!anyUnnamedDst && slots[i].get(DataComponents.ITEM_NAME) != null ? 4 : 0)
                                 + (srcBundleTypes.contains(slots[i].getItem()) ? 2 : 0)
@@ -443,70 +403,108 @@ public class BundleCopy extends Module {
                 .min(Comparator.naturalOrder()).get();
 
         tempBundleSlot = pas.slot;
+        return new PlanResult(bundlesToCopy, tempBundleSlot);
+    }
+
+    private void copyMapArtInBundles(final ArrayDeque<InvAction> clicks, final ItemStack[] slots,
+            final InventoryLayout f,
+            int numEmptyMapsInGrid, final int totalEmptyMaps) {
+        BundleScan scan = scanBundles(slots, f);
+        if (scan.usableEmptyCount <= 0) {
+            error("Could not find usable empty bundle");
+            return;
+        }
+
+        int[] slotsWithBundles = scan.slots;
+        BundleContents[] bundles = scan.contents;
+        int SRC_BUNDLES = scan.sourceCount;
+        int USABLE_EMPTY_BUNDLES = scan.usableEmptyCount;
+        int LAST_EMPTY_SLOT = lastEmptySlot(slots, f.hotbarEnd, f.inventoryStart);
+        int destsPerSource = SRC_BUNDLES > USABLE_EMPTY_BUNDLES ? 999 : USABLE_EMPTY_BUNDLES / SRC_BUNDLES;
+
+        PlanResult plan = planDestinations(slots, f, slotsWithBundles, bundles,
+                SRC_BUNDLES, USABLE_EMPTY_BUNDLES, destsPerSource);
+        if (plan == null)
+            return;
+
+        int emptyMapsNeeded = plan.bundlesToCopy.entrySet().stream()
+                .mapToInt(e -> getNumStored(bundles[e.getKey()].weight().getOrThrow()) * e.getValue().size()).sum();
+        if (totalEmptyMaps < emptyMapsNeeded) {
+            error("Insufficient empty maps");
+            return;
+        }
+
+        TreeMap<Integer, List<Integer>> bundlesToCopy = plan.bundlesToCopy;
+        int tempBundleSlot = plan.tempSlot;
 
         for (var entry : bundlesToCopy.entrySet()) {
             BundleContents content = bundles[entry.getKey()];
 
-            ItemStack[] contentItems = new ItemStack[content.size()];
-            int ci = 0;
-            for (var t : content.items()) {
-                contentItems[ci++] = t.create();
-            }
+            ItemStack[] contentItems = extractItems(content);
 
             for (int _0 = 0; _0 < contentItems.length; ++_0) {
-                clicks.add(new InvAction(slotsWithBundles[entry.getKey()], 1, ActionType.CLICK));
-                clicks.add(new InvAction(tempBundleSlot, 0, ActionType.CLICK));
+                clicks.add(new InvAction(slotsWithBundles[entry.getKey()], 1, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(tempBundleSlot, 0, InvAction.ActionType.CLICK));
             }
 
             for (int i = 0; i < contentItems.length; ++i) {
                 final int count = contentItems[i].getCount();
 
-                clicks.add(new InvAction(tempBundleSlot, 1, ActionType.CLICK));
+                clicks.add(new InvAction(tempBundleSlot, 1, InvAction.ActionType.CLICK));
 
-                clicks.add(new InvAction(f.INPUT_START, 0, ActionType.CLICK));
+                clicks.add(new InvAction(f.inputStart, 0, InvAction.ActionType.CLICK));
                 boolean didShiftCraft = false;
                 for (int d : entry.getValue()) {
                     if (numEmptyMapsInGrid < count) {
                         numEmptyMapsInGrid = getEmptyMapsIntoInput(clicks, slots, f, count, numEmptyMapsInGrid, 99);
-                        LAST_EMPTY_SLOT = lastEmptySlot(slots, f.HOTBAR_END, f.INV_START);
+                        LAST_EMPTY_SLOT = lastEmptySlot(slots, f.hotbarEnd, f.inventoryStart);
                     }
 
                     numEmptyMapsInGrid -= count;
                     if (didShiftCraft) {
-                        if (LAST_EMPTY_SLOT >= f.HOTBAR_START) {
-                            clicks.add(new InvAction(f.INPUT_START, LAST_EMPTY_SLOT - f.HOTBAR_START,
-                                    ActionType.HOTBAR_SWAP));
+                        if (LAST_EMPTY_SLOT >= f.hotbarStart) {
+                            clicks.add(new InvAction(f.inputStart, LAST_EMPTY_SLOT - f.hotbarStart,
+                                    InvAction.ActionType.HOTBAR_SWAP));
 
                         } else {
-                            clicks.add(new InvAction(LAST_EMPTY_SLOT, 0, ActionType.CLICK));
-                            clicks.add(new InvAction(f.INPUT_START, 0, ActionType.CLICK));
+                            clicks.add(new InvAction(LAST_EMPTY_SLOT, 0, InvAction.ActionType.CLICK));
+                            clicks.add(new InvAction(f.inputStart, 0, InvAction.ActionType.CLICK));
                         }
                     }
 
                     if (LAST_EMPTY_SLOT != -1
                             && (count > 1 || d == entry.getValue().get(entry.getValue().size() - 1))) {
                         didShiftCraft = true;
-                        clicks.add(new InvAction(f.RESULT, 0, ActionType.SHIFT_CLICK));
-                        clicks.add(new InvAction(LAST_EMPTY_SLOT, 1, ActionType.CLICK));
-                        clicks.add(new InvAction(slotsWithBundles[d], 0, ActionType.CLICK));
+                        clicks.add(new InvAction(f.resultSlot, 0, InvAction.ActionType.SHIFT_CLICK));
+                        clicks.add(new InvAction(LAST_EMPTY_SLOT, 1, InvAction.ActionType.CLICK));
+                        clicks.add(new InvAction(slotsWithBundles[d], 0, InvAction.ActionType.CLICK));
                     } else {
                         didShiftCraft = false;
-                        clicks.add(new InvAction(f.RESULT, 0, ActionType.CLICK));
-                        clicks.add(new InvAction(f.INPUT_START, 0, ActionType.CLICK));
-                        clicks.add(new InvAction(f.INPUT_START, 1, ActionType.CLICK));
-                        clicks.add(new InvAction(slotsWithBundles[d], 0, ActionType.CLICK));
+                        clicks.add(new InvAction(f.resultSlot, 0, InvAction.ActionType.CLICK));
+                        clicks.add(new InvAction(f.inputStart, 0, InvAction.ActionType.CLICK));
+                        clicks.add(new InvAction(f.inputStart, 1, InvAction.ActionType.CLICK));
+                        clicks.add(new InvAction(slotsWithBundles[d], 0, InvAction.ActionType.CLICK));
                     }
                 }
 
-                final int fromSlot = didShiftCraft ? LAST_EMPTY_SLOT : f.INPUT_START;
-                clicks.add(new InvAction(fromSlot, 0, ActionType.CLICK));
-                clicks.add(new InvAction(slotsWithBundles[entry.getKey()], 0, ActionType.CLICK));
+                final int fromSlot = didShiftCraft ? LAST_EMPTY_SLOT : f.inputStart;
+                clicks.add(new InvAction(fromSlot, 0, InvAction.ActionType.CLICK));
+                clicks.add(new InvAction(slotsWithBundles[entry.getKey()], 0, InvAction.ActionType.CLICK));
             }
         }
 
         if (numEmptyMapsInGrid > 0) {
-            clicks.add(new InvAction(f.INPUT_START + 1, 0, ActionType.SHIFT_CLICK));
+            clicks.add(new InvAction(MAP_INPUT_SLOT, 0, InvAction.ActionType.SHIFT_CLICK));
         }
+    }
+
+    private static ItemStack[] extractItems(BundleContents contents) {
+        ItemStack[] items = new ItemStack[contents.size()];
+        int i = 0;
+        for (var t : contents.items()) {
+            items[i++] = t.create();
+        }
+        return items;
     }
 
     @Override
@@ -516,5 +514,18 @@ public class BundleCopy extends Module {
         }
 
         return null;
+    }
+
+    private record PlanResult(TreeMap<Integer, List<Integer>> bundlesToCopy, int tempSlot) {
+    }
+
+    private record PrioAndSlot(int p, int slot) implements Comparable<PrioAndSlot> {
+        @Override
+        public int compareTo(PrioAndSlot o) {
+            return p != o.p ? p - o.p : slot - o.slot;
+        }
+    }
+
+    private record BundleScan(int[] slots, BundleContents[] contents, int sourceCount, int usableEmptyCount) {
     }
 }
