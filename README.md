@@ -32,6 +32,7 @@ Better Place          || Allows you to place blocks in weird ways
 Bayblade              || People see you spin
 Carpet Place          || Helps with manual carpet placing for spawn proofing and mapart
 Bonemeal Aura         || Automatically bonemeal crops around the player
+Bundle Copy           || Automatically copies maps in bundles
 Chat Encryption       || Encrypts messages using a user-provided key
 Chunk Borders         || Customizable chunk border rendering
 Condition Toggle      || Toggles modules based on conditions
